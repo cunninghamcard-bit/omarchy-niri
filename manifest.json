@@ -7,7 +7,7 @@
   "niriMinimum": "26.04",
   "keybindingsSource": "2725244134/dotfiles",
   "keybindingsCommit": "4a96e1e36f4e19fd8d24d04ace95fa832a01c16e",
-  "windowManagementBindings": 69,
+  "windowManagementBindings": 8,
   "format": "managed replacement layer (not an Omarchy shell plugin manifest)",
   "files": {
     "bin/omarchy-bar-text-color": {
@@ -411,7 +411,7 @@
       "baseSha256": [
         null
       ],
-      "sha256": "e241ac4bd3b8b0ea7f495507bb89b064dc018675f9745f3434104dfd9cfd0d4d"
+      "sha256": "a7d5ff91cfb59821a2ba233fe6ef422b794b4db5f763525e2e6484342b7f9b55"
     },
     "default/niri/desktop.py": {
       "baseSha256": [
@@ -423,7 +423,7 @@
       "baseSha256": [
         null
       ],
-      "sha256": "0c390836a6284e62c80865f9482db0a90b5f97dbabbd5100fa3906f37e4e611e"
+      "sha256": "a1a04f9cec91511a9667eb976293a13c1bc8cf6c30d45ecf21883aab2e4e7a9f"
     },
     "default/omarchy/omarchy-menu.jsonc": {
       "baseSha256": [
@@ -535,5 +535,6 @@
       ],
       "sha256": "7ae25d8ce765c5f91e0f7d92769feaf5dd34bb5630574c78bce9180a4e43fb08"
     }
-  }
+  },
+  "keybindingsScope": "Directional column/workspace navigation and movement only. Horizontal focus continues to adjacent monitors; remaining bindings use Omarchy key positions where supported by Niri."
 }

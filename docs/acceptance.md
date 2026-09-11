@@ -38,7 +38,7 @@ with arbitrary future Omarchy versions.
 | Area | Evidence and result |
 | --- | --- |
 | Installation and restore | Installed and refreshed in the VM. Actual uninstall restored the Hyprland session entry and original environment. Every managed packaged source hash remained unchanged. Reinstall for `aa` launched `niri --session`; no Hyprland process was running. |
-| Window management | Real windows verified half-width columns, scrolling/focus, explicit centering/resize, floating, workspace moves and application identity focus. The 69 imported bindings retain their source actions; representative runtime actions were exercised, not every possible physical key combination. |
+| Window management | Real windows verified half-width columns, scrolling/focus, explicit centering/resize, floating, workspace moves and application identity focus. The initial release imported 69 bindings; the follow-up reduces the personal overrides to eight directional combinations and restores common Omarchy key positions. Historical runtime evidence below predates that binding revision; it does not certify every new physical key combination. |
 | Shell and workspaces | Original Omarchy Quickshell bar, workspace state and active-window information run against Niri events. Normal shell restart passed. |
 | Menus and tray | Real StatusNotifier/DBusMenu fixture opened, invoked its action, and dismissed using Escape and an empty-desktop click. Popup cards reuse the shell's existing layer-shell dismissal surfaces. |
 | Locking | Real lock UI rejected a wrong password and accepted the disposable account's correct password. Restart while securely locked was refused. Killing the locker caused supervision to relaunch and reacquire the lock. |
@@ -51,6 +51,18 @@ with arbitrary future Omarchy versions.
 | Screen sharing | Chromium 152 used the real GNOME portal and Entire Screen chooser. Five WebRTC video frames reached a canvas at 816×510, with 256 distinct sampled color values; the stream was then stopped. |
 | Theme and monitor UI | A full theme switch regenerated the Niri accent border; shell IPC remained live and monitor state reported the active output. Original theme was restored. |
 | Webcam window controls | A synthetic WebcamOverlay window verified medium/smaller/larger geometry. Physical camera capture is outside this VM. |
+
+## Directional binding follow-up
+
+The personal layer now has eight combinations. Horizontal focus uses the native
+`focus-column-or-monitor-left/right` actions; no extra personal monitor-switch
+bindings or selectable profiles are introduced. The change also restores common
+Omarchy positions for window actions, numbered workspaces and shell commands.
+Payload hashes, shell syntax and duplicate-binding checks passed; an independent
+agent reviewed the mapping. Action names and the workspace `focus=false` property
+were checked against the installed Niri version's configuration decoder source.
+This revision has not been reloaded into the running VM or tested across two
+physical outputs; the earlier runtime evidence is not a claim that it has.
 
 ## Hardware boundaries
 

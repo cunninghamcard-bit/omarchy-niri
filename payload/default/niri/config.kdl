@@ -40,7 +40,7 @@ binds {
   Mod+Return hotkey-overlay-title="Terminal" { spawn "omarchy-launch-terminal"; }
   Mod+Shift+Return hotkey-overlay-title="Browser" { spawn "omarchy-launch-browser"; }
   Mod+Shift+B { spawn "omarchy-launch-browser"; }
-  Mod+Alt+F { spawn "omarchy-launch-nautilus"; }
+  Mod+Shift+F hotkey-overlay-title="File manager" { spawn "omarchy-launch-nautilus"; }
   Mod+Shift+N { spawn "omarchy-launch-editor"; }
   Mod+Space hotkey-overlay-title="Omarchy menu" { spawn "omarchy-menu" "toggle"; }
   Mod+Alt+Space { spawn "omarchy-menu" "toggle" "apps"; }
@@ -49,8 +49,8 @@ binds {
   Mod+Ctrl+A { spawn "omarchy-shell" "shell" "toggle" "omarchy.audio"; }
   Mod+Alt+C { spawn "omarchy-menu" "toggle" "capture"; }
   Mod+Ctrl+L hotkey-overlay-title="Lock" { spawn "omarchy-system-lock"; }
-  Mod+Ctrl+Shift+R { spawn "omarchy-restart-shell"; }
-  Ctrl+Alt+Delete { quit; }
+  Mod+Ctrl+Shift+R hotkey-overlay-title="Clear reminders" { spawn "omarchy-reminder" "clear"; }
+  Ctrl+Alt+Delete hotkey-overlay-title="Close all windows" { spawn "omarchy-hyprland-window-close-all"; }
   Print { screenshot; }
   Ctrl+Print { screenshot-screen; }
   Alt+Print { screenshot-window; }
@@ -158,3 +158,95 @@ window-rule {
 
 
 window-rule { opacity 0.98; }
+
+// Omarchy key positions, translated to native Niri actions. Directional
+// overrides are isolated in window-management.kdl so they cannot shadow these.
+binds {
+  Mod+W repeat=false { close-window; }
+  Mod+T { toggle-window-floating; }
+  Mod+F { fullscreen-window; }
+  Mod+Ctrl+F { toggle-windowed-fullscreen; }
+  Mod+Alt+F { maximize-column; }
+  Mod+O { spawn "omarchy-hyprland-window-pop"; }
+  Mod+Alt+Home { spawn "omarchy-hyprland-window-width" "save"; }
+  Mod+Home { spawn "omarchy-hyprland-window-width" "restore"; }
+  Mod+L { toggle-column-tabbed-display; }
+  Mod+G { toggle-column-tabbed-display; }
+  Mod+Alt+G { expel-window-from-column; }
+  Mod+Tab { focus-workspace-down; }
+  Mod+Shift+Tab { focus-workspace-up; }
+  Mod+Ctrl+Tab { focus-workspace-previous; }
+  Mod+Shift+Left { move-column-left; }
+  Mod+Shift+Right { move-column-right; }
+  Mod+Shift+Up { move-window-up; }
+  Mod+Shift+Down { move-window-down; }
+  Ctrl+Alt+Tab { focus-monitor-next; }
+  Ctrl+Alt+Shift+Tab { focus-monitor-previous; }
+  Mod+Alt+Tab { focus-window-down-or-top; }
+  Mod+Alt+Shift+Tab { focus-window-up-or-bottom; }
+  Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+  Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
+  Mod+Alt+WheelScrollDown cooldown-ms=150 { focus-window-down-or-top; }
+  Mod+Alt+WheelScrollUp cooldown-ms=150 { focus-window-up-or-bottom; }
+  Mod+Shift+Alt+Left { move-workspace-to-monitor-left; }
+  Mod+Shift+Alt+Right { move-workspace-to-monitor-right; }
+  Mod+Shift+Alt+Up { move-workspace-to-monitor-up; }
+  Mod+Shift+Alt+Down { move-workspace-to-monitor-down; }
+  Mod+1 { focus-workspace 1; }
+  Mod+Shift+1 { move-window-to-workspace 1; }
+  Mod+Shift+Alt+1 { move-window-to-workspace 1 focus=false; }
+  Mod+2 { focus-workspace 2; }
+  Mod+Shift+2 { move-window-to-workspace 2; }
+  Mod+Shift+Alt+2 { move-window-to-workspace 2 focus=false; }
+  Mod+3 { focus-workspace 3; }
+  Mod+Shift+3 { move-window-to-workspace 3; }
+  Mod+Shift+Alt+3 { move-window-to-workspace 3 focus=false; }
+  Mod+4 { focus-workspace 4; }
+  Mod+Shift+4 { move-window-to-workspace 4; }
+  Mod+Shift+Alt+4 { move-window-to-workspace 4 focus=false; }
+  Mod+5 { focus-workspace 5; }
+  Mod+Shift+5 { move-window-to-workspace 5; }
+  Mod+Shift+Alt+5 { move-window-to-workspace 5 focus=false; }
+  Mod+6 { focus-workspace 6; }
+  Mod+Shift+6 { move-window-to-workspace 6; }
+  Mod+Shift+Alt+6 { move-window-to-workspace 6 focus=false; }
+  Mod+7 { focus-workspace 7; }
+  Mod+Shift+7 { move-window-to-workspace 7; }
+  Mod+Shift+Alt+7 { move-window-to-workspace 7 focus=false; }
+  Mod+8 { focus-workspace 8; }
+  Mod+Shift+8 { move-window-to-workspace 8; }
+  Mod+Shift+Alt+8 { move-window-to-workspace 8 focus=false; }
+  Mod+9 { focus-workspace 9; }
+  Mod+Shift+9 { move-window-to-workspace 9; }
+  Mod+Shift+Alt+9 { move-window-to-workspace 9 focus=false; }
+  Mod+0 { focus-workspace 10; }
+  Mod+Shift+0 { move-window-to-workspace 10; }
+  Mod+Shift+Alt+0 { move-window-to-workspace 10 focus=false; }
+  Mod+Minus { set-window-width "-100"; }
+  Mod+Shift+Minus { set-window-height "-100"; }
+  Mod+Equal { set-window-width "+100"; }
+  Mod+Shift+Equal { set-window-height "+100"; }
+  Mod+Alt+Minus { set-window-width "-25"; }
+  Mod+Alt+Shift+Minus { set-window-height "-25"; }
+  Mod+Alt+Equal { set-window-width "+25"; }
+  Mod+Alt+Shift+Equal { set-window-height "+25"; }
+  Mod+Ctrl+Minus { set-window-width "-300"; }
+  Mod+Ctrl+Shift+Minus { set-window-height "-300"; }
+  Mod+Ctrl+Equal { set-window-width "+300"; }
+  Mod+Ctrl+Shift+Equal { set-window-height "+300"; }
+  Mod+Slash { spawn "omarchy-hyprland-monitor-scaling" "up"; }
+  Mod+Alt+Slash { spawn "omarchy-hyprland-monitor-scaling" "down"; }
+  Mod+Escape { spawn "omarchy-menu" "toggle" "system"; }
+  Mod+Ctrl+C { spawn "omarchy-menu" "toggle" "capture"; }
+  Mod+Comma { spawn "omarchy-shell" "notifications" "dismissOne"; }
+  Mod+Ctrl+R { spawn "omarchy-menu" "toggle" "reminder-set"; }
+  Mod+Ctrl+1 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "1"; }
+  Mod+Ctrl+2 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "2"; }
+  Mod+Ctrl+3 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "3"; }
+  Mod+Ctrl+4 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "4"; }
+  Mod+Ctrl+5 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "5"; }
+  Mod+Ctrl+6 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "6"; }
+  Mod+Ctrl+7 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "7"; }
+  Mod+Ctrl+8 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "8"; }
+  Mod+Ctrl+9 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "9"; }
+}

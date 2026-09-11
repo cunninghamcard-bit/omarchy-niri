@@ -1,7 +1,7 @@
 # Omarchy Niri
 
 将已有 Omarchy 的 Hyprland 会话替换为 Niri，保留原版 Quickshell 外壳、
-69 条窗口管理快捷键和原生滚动留白。独立扩展，无需重装或制作镜像。
+原版常用快捷键、少量方向键调整和 Niri 原生滚动留白。独立扩展，无需重装或制作镜像。
 
 A one-way Niri replacement for Omarchy, retaining Omarchy's Quickshell desktop.
 Install this extension on an existing Omarchy machine. No custom ISO or separate
@@ -42,20 +42,41 @@ services remain. Compositor state and operations use Niri IPC. No Hyprland
 backend is kept in the replacement runtime paths. Existing `omarchy-hyprland-*`
 command names used by Omarchy scripts are thin Niri aliases.
 
-The 69 window-management bindings come from
-[2725244134/dotfiles](https://github.com/2725244134/dotfiles/tree/4a96e1e36f4e19fd8d24d04ace95fa832a01c16e/niri/.config/niri).
-No Noctalia configuration, application choices, autostart, or device settings are
-imported from that repository. Omarchy application and service shortcuts are
-retained wherever they do not conflict with those window-management bindings.
+Omarchy key positions remain the baseline. Only eight directional combinations
+are adapted from [2725244134/dotfiles](https://github.com/2725244134/dotfiles/tree/4a96e1e36f4e19fd8d24d04ace95fa832a01c16e/niri/.config/niri):
 
-Niri keeps its scrolling layout and empty space. Columns start at half width;
-they are never automatically stretched to fill an output. `Super+R` switches
-width presets; `Super+C` centers; `Super+F` explicitly maximizes.
+| Keys | Action |
+| --- | --- |
+| Super + Left / Right | Focus the adjacent column; at the end, focus the adjacent monitor |
+| Super + Up / Down | Focus the workspace above / below |
+| Super + Ctrl + Left / Right | Move the current column left / right |
+| Super + Ctrl + Up / Down | Move the current column to the workspace above / below |
+
+Horizontal focus uses Niri's `focus-column-or-monitor-left/right`, so monitor
+focus does not require a separate shortcut. Moving a column is a different
+action from focusing another monitor. A column may contain several windows.
+No Noctalia, application choices, autostart or device settings are imported.
+
+Other common bindings use Omarchy positions: `Super+W` closes, `Super+T`
+toggles floating, `Super+F` toggles fullscreen, `Super+Alt+F` maximizes a column,
+and `Super+Shift+F` opens the file manager. `Super+1..0` selects a workspace;
+`Super+Shift+1..0` moves a window there. `Super+Ctrl+1..9` opens bar panels.
+`Super+Tab` changes workspace. Resize keys use Omarchy's pixel steps, not the
+personal width/height presets. Hyprland-specific layouts/grouping do not have
+identical Niri semantics: tabbed columns provide the grouping/layout toggle,
+and the pop-window adapter toggles floating without Hyprland pinning. Universal
+Super+C/V/X forwarding, scratchpads and pseudo-tiling are not provided by this
+binding translation; normal application clipboard shortcuts remain available.
+
+Niri keeps its scrolling layout and empty space. Columns start at half width
+and are never automatically stretched to fill an output. Only explicit sizing
+or maximization actions change that behavior.
 
 ## Configure
 
 Personal overrides live in `~/.config/niri/input.kdl`, `outputs.kdl`, and
-`bindings.kdl`. `Super+/` opens Niri's shortcut overlay. The Omarchy setup menu
+`bindings.kdl`. `Super+K` opens the shortcut overlay; `Super+/` keeps Omarchy's monitor
+scaling action. The Omarchy setup menu
 opens these Niri files. Radius and gaps are in
 `~/.config/omarchy/niri-style.json`; themes update Niri borders automatically.
 
