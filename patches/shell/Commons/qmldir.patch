@@ -1,0 +1,7 @@
+--- a/shell/Commons/qmldir
++++ b/shell/Commons/qmldir
+@@ -3,3 +3,4 @@
+ singleton Color 1.0 Color.qml
+ singleton Style 1.0 Style.qml
+ singleton Util 1.0 Util.qml
++singleton Niri 1.0 Niri.qml

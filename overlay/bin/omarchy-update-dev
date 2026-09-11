@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# omarchy:summary=No dev checkout to update in the Niri view
+# omarchy:hidden=true
+
+# omarchy-update aborts when OMARCHY_PATH is not a git checkout. The view is
+# not one; the extension updates from its own clone (omarchy-niri-extension update).
+exit 0

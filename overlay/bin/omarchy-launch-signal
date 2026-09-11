@@ -4,7 +4,7 @@
 
 set -e
 
-if omarchy-focus-app '\bsignal\b'; then
+if omarchy-niri focus '\bsignal\b'; then
   exit 0
 elif [[ -x /usr/bin/signal-desktop ]]; then
   exec setsid uwsm-app -- /usr/bin/signal-desktop

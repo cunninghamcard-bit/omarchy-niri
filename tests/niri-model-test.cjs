@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict')
 const assertEqual = assert.equal
 const assertDeepEqual = assert.deepEqual
-const model = require('../payload/shell/Commons/NiriModel.js')
+const model = require('../overlay/shell/Commons/NiriModel.js')
 let state = model.emptyState()
 const send = event => { state = model.reduce(state, event) }
 send({WorkspacesChanged:{workspaces:[

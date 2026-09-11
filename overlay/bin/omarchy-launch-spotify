@@ -4,7 +4,7 @@
 
 set -e
 
-if omarchy-focus-app '\bspotify\b'; then
+if omarchy-niri focus '\bspotify\b'; then
   exit 0
 elif [[ -x /usr/bin/spotify ]]; then
   exec setsid uwsm-app -- /usr/bin/spotify

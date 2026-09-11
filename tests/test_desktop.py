@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = Path(os.environ.get("OMARCHY_NIRI_SOURCE", ROOT / "payload"))
+SOURCE = Path(os.environ.get("OMARCHY_NIRI_SOURCE", ROOT / "overlay"))
 sys.path.insert(0, str(SOURCE / "default" / "niri"))
 
 import desktop  # noqa: E402

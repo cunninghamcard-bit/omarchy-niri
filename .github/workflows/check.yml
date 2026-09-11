@@ -1,33 +1,55 @@
 name: Extension checks
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '17 6 * * 1'   # weekly look at upstream main
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  contracts:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/checkout@v4
         with:
           repository: omacom/omarchy
           ref: 346e69e1cec6c4e8924531874af6ba010a1bc99e
           path: test-artifacts/upstream
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: python3 -m unittest discover -s tests -v
-        env:
-          PYTHONDONTWRITEBYTECODE: '1'
       - run: node tests/niri-model-test.cjs
-      - run: python3 tests/check_payload.py --base test-artifacts/upstream
-      - run: python3 tests/ablation.py --base test-artifacts/upstream
-      - uses: actions/upload-artifact@v4
-        if: always()
+      - run: bash tests/test_extension.sh
+      - run: bash tests/coverage.sh test-artifacts/upstream
+      - name: Valid Omarchy plugin
+        # Validate a clean export, which is what omarchy plugin add clones.
+        run: |
+          mkdir -p /tmp/plugin && git archive HEAD | tar -x -C /tmp/plugin
+          bash test-artifacts/upstream/bin/omarchy-plugin-validate /tmp/plugin
+      - name: Patches apply to the pinned Omarchy
+        run: |
+          cd test-artifacts/upstream
+          find ../../patches -name '*.patch' | while read -r p; do
+            t=${p#../../patches/}; git apply --include="${t%.patch}" "$p"
+          done
+
+  # Not a gate: tells us before users do when upstream main moves under a patch
+  # or adds a compositor call we do not cover.
+  upstream-main:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          name: ablation-results
-          path: test-artifacts/ablation/
+          repository: omacom/omarchy
+          path: test-artifacts/upstream
+      - run: bash tests/coverage.sh test-artifacts/upstream
+      - run: |
+          cd test-artifacts/upstream
+          find ../../patches -name '*.patch' | while read -r p; do
+            t=${p#../../patches/}; git apply --include="${t%.patch}" "$p" || echo "::warning::${t%.patch} no longer applies"
+          done

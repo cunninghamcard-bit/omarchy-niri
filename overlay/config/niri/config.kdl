@@ -1,6 +1,6 @@
 // Omarchy defaults are managed by the Niri extension. Keep personal overrides here.
-include "~/.config/niri/omarchy.kdl"
-include "~/.config/niri/window-management.kdl"
+include "/run/omarchy/niri/default/niri/config.kdl"
+include "/run/omarchy/niri/default/niri/window-management.kdl"
 include optional=true "~/.config/niri/omarchy-theme.kdl"
 include optional=true "~/.config/niri/omarchy-outputs.kdl"
 include optional=true "~/.config/niri/omarchy-input.kdl"

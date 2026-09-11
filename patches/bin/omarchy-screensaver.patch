@@ -1,0 +1,23 @@
+--- a/bin/omarchy-screensaver
++++ b/bin/omarchy-screensaver
+@@ -3,11 +3,10 @@
+ # omarchy:summary=Run the Omarchy screensaver using random effects from TTE.
+ 
+ screensaver_in_focus() {
+-  hyprctl activewindow -j | jq -e '.class == "org.omarchy.screensaver"' >/dev/null 2>&1
++    niri msg --json focused-window | jq -e '.app_id == "org.omarchy.screensaver"' >/dev/null 2>&1
+ }
+ 
+ exit_screensaver() {
+-  hyprctl eval 'hl.config({ cursor = { invisible = false } })' &>/dev/null || hyprctl keyword cursor:invisible false &>/dev/null || true
+   pkill -x ttfx 2>/dev/null
+   pkill -f '[o]rg.omarchy.screensaver' 2>/dev/null
+   exit 0
+@@ -18,7 +17,6 @@
+ 
+ printf '\033]11;rgb:00/00/00\007'  # Set background color to black
+ 
+-hyprctl eval 'hl.config({ cursor = { invisible = true } })' &>/dev/null || hyprctl keyword cursor:invisible true &>/dev/null
+ 
+ tty=$(tty 2>/dev/null)
+ 

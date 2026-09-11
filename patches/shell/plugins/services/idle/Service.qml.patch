@@ -1,0 +1,63 @@
+--- a/shell/plugins/services/idle/Service.qml
++++ b/shell/plugins/services/idle/Service.qml
+@@ -1,8 +1,8 @@
+ import QtQuick
+ import Quickshell
+-import Quickshell.Hyprland
+ import Quickshell.Io
+ import Quickshell.Wayland
++import qs.Commons
+ import "IdleModel.js" as IdleModel
+ 
+ Item {
+@@ -138,19 +138,17 @@
+     root.cancelIdleCycle("screensaver-dismissed")
+   }
+ 
+-  function eventParts(event, count) {
+-    return IdleModel.eventParts(event, count)
+-  }
+-
+-  function handleHyprlandEvent(event) {
+-    var name = String(event && event.name ? event.name : "")
+-    if (name === "openwindow") {
+-      var open = eventParts(event, 4)
+-      if (String(open[2] || "") === root.screensaverClass) root.handleScreensaverWindowOpened(open[0])
+-    } else if (name === "closewindow") {
+-      var close = eventParts(event, 1)
+-      var address = String(close[0] || "")
+-      if (root.screensaverWindows[address]) root.handleScreensaverWindowClosed(address)
++  function handleNiriEvent(event) {
++    var opened = event.WindowOpenedOrChanged
++    if (opened && opened.window.app_id === root.screensaverClass)
++      root.handleScreensaverWindowOpened(String(opened.window.id))
++    var closed = event.WindowClosed
++    if (closed && root.screensaverWindows[String(closed.id)])
++      root.handleScreensaverWindowClosed(String(closed.id))
++    if (event.WindowsChanged) {
++      var windows = event.WindowsChanged.windows.filter(function(w) { return w.app_id === root.screensaverClass })
++      root.resetScreensaverWindows()
++      windows.forEach(function(w) { root.handleScreensaverWindowOpened(String(w.id)) })
+     }
+   }
+ 
+@@ -159,7 +157,7 @@
+ 
+     // Starting the screensaver can make the compositor report activity. Keep
+     // the lock timer running once the screensaver exists (or during its short
+-    // launch grace); Hyprland window events cancel the cycle if it exits before
++    // launch grace); Niri window events cancel the cycle if it exits before
+     // the normal lock deadline.
+     if (root.screensaverStartedThisCycle && (root.screensaverWindowCount > 0 || screensaverLaunchGraceTimer.running)) {
+       logEvent("idle-monitor-active", "screensaver cycle remains armed")
+@@ -281,8 +279,8 @@
+   }
+ 
+   Connections {
+-    target: Hyprland
+-    function onRawEvent(event) { root.handleHyprlandEvent(event) }
++    target: Niri
++    function onEventReceived(event) { root.handleNiriEvent(event) }
+   }
+ 
+   Process {

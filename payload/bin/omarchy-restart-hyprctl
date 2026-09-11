@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Control the Niri desktop
-# omarchy:hidden=true
-
-exec niri msg action load-config-file "$@"

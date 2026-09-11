@@ -12,7 +12,7 @@ import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from unittest.mock import patch
 
-root = Path(__file__).resolve().parents[1] / "payload"
+root = Path(__file__).resolve().parents[1] / "overlay"
 spec = importlib.util.spec_from_file_location("bridge", root / "default/niri/bridge.py")
 bridge = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bridge)
