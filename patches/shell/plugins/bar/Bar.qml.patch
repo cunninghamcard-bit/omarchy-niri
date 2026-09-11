@@ -1,0 +1,18 @@
+--- a/shell/plugins/bar/Bar.qml
++++ b/shell/plugins/bar/Bar.qml
+@@ -1,5 +1,4 @@
+ import Quickshell
+-import Quickshell.Hyprland
+ import Quickshell.Io
+ import Quickshell.Wayland
+ import QtQuick
+@@ -488,8 +487,7 @@
+   // belongs. Empty until Hyprland reports one, which leaves panel routing on
+   // its per-monitor fallback rather than guessing at an output.
+   function focusedScreenName() {
+-    var monitor = Hyprland.focusedMonitor
+-    return monitor ? String(monitor.name || "") : ""
++    return Niri.focusedOutput
+   }
+ 
+   // Resolve the live bar-widget instance for a plugin id (e.g. "omarchy.bluetooth").

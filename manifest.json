@@ -1,6 +1,6 @@
 {
   "name": "omarchy-niri",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "base": "omacom/omarchy",
   "baseVersion": "4.0.2",
   "baseCommit": "346e69e1cec6c4e8924531874af6ba010a1bc99e",
@@ -14,13 +14,15 @@
       "baseSha256": [
         "9c43f79b0a9652978d3ae75c22c386acfc99e65f5873c3168ac7dd35f5ec2cc7"
       ],
-      "sha256": "fcffc47d8b451a30c48d0bf72c1e3c5335ded738174c6aa19fce1c60ce71ed74"
+      "sha256": "fcffc47d8b451a30c48d0bf72c1e3c5335ded738174c6aa19fce1c60ce71ed74",
+      "patch": true
     },
     "bin/omarchy-brightness-display": {
       "baseSha256": [
         "587908cfeb5c99fa7746fd4616eeef593ba278de0e153dc77918caa72bd18930"
       ],
-      "sha256": "8ab910de0539ed05963f52d0c1eae09667e9e765a62105568eeb62e6bdb549c2"
+      "sha256": "8ab910de0539ed05963f52d0c1eae09667e9e765a62105568eeb62e6bdb549c2",
+      "patch": true
     },
     "bin/omarchy-capture-region": {
       "baseSha256": [
@@ -200,7 +202,8 @@
       "baseSha256": [
         "c3e95082fccb8cbee3a45c3f0895247e208a5d1fa64fe3b6cba4e793ce672dc5"
       ],
-      "sha256": "fffaf66c8699eaad317cbc31405c4163b13d166562f6ca7be12393651d1790ea"
+      "sha256": "fffaf66c8699eaad317cbc31405c4163b13d166562f6ca7be12393651d1790ea",
+      "patch": true
     },
     "bin/omarchy-launch-about": {
       "baseSha256": [
@@ -212,7 +215,8 @@
       "baseSha256": [
         "de8efae516c25f3cc39ddaf0414f2cd6c20112a29e87b3a091513990f52c0e8f"
       ],
-      "sha256": "02bb04e93067e47828348013e5410fe65e6efd93fa91c2f423f0c2da142b68cc"
+      "sha256": "02bb04e93067e47828348013e5410fe65e6efd93fa91c2f423f0c2da142b68cc",
+      "patch": true
     },
     "bin/omarchy-launch-or-focus": {
       "baseSha256": [
@@ -230,7 +234,8 @@
       "baseSha256": [
         "484f3af00ee3d13b8f4e33b118d9b7355c72d254a631fc740a160f5f1d140cff"
       ],
-      "sha256": "12c6bbbf3723d00140a08c358e8c93a873a9a99d5bf93a69061d0b9fc53c144c"
+      "sha256": "12c6bbbf3723d00140a08c358e8c93a873a9a99d5bf93a69061d0b9fc53c144c",
+      "patch": true
     },
     "bin/omarchy-launch-signal": {
       "baseSha256": [
@@ -248,7 +253,8 @@
       "baseSha256": [
         "13eb04d29aacb52186be0a76adcfbe11016ac326028c25557152c723762ebb53"
       ],
-      "sha256": "48dfd791cf3ecb393830a00305b01893eb6f99403bd4f4022afe24286392c59d"
+      "sha256": "48dfd791cf3ecb393830a00305b01893eb6f99403bd4f4022afe24286392c59d",
+      "patch": true
     },
     "bin/omarchy-menu-keybindings": {
       "baseSha256": [
@@ -260,7 +266,8 @@
       "baseSha256": [
         "298060c0ac4283e1223d06ccd2772f7d1396d2dce6990afdbfa4108a13e8d0c1"
       ],
-      "sha256": "45b47bdd943f90871d55fd5f9940c0503f3a30777dd3f04ad32e10483c863158"
+      "sha256": "45b47bdd943f90871d55fd5f9940c0503f3a30777dd3f04ad32e10483c863158",
+      "patch": true
     },
     "bin/omarchy-monitor-state": {
       "baseSha256": [
@@ -302,7 +309,8 @@
       "baseSha256": [
         "0c7b1284cf1977aae96774abd92df5301856a92d792c099e2bdf7d16551038b9"
       ],
-      "sha256": "b6ef0f6fc1650b6c36494144c71cbd0d348f7299bfe01aa3580bb8695685a835"
+      "sha256": "b6ef0f6fc1650b6c36494144c71cbd0d348f7299bfe01aa3580bb8695685a835",
+      "patch": true
     },
     "bin/omarchy-restart-hyprctl": {
       "baseSha256": [
@@ -339,7 +347,8 @@
       "baseSha256": [
         "f1953110658d819597d3c9d8df616350c362ee4c257227fcbdefac8275bbd596"
       ],
-      "sha256": "8278e7283e9ec649636dbc24b9e23ba494f41990dc634dbc37124a39ea1410d6"
+      "sha256": "8278e7283e9ec649636dbc24b9e23ba494f41990dc634dbc37124a39ea1410d6",
+      "patch": true
     },
     "bin/omarchy-system-wake": {
       "baseSha256": [
@@ -351,7 +360,8 @@
       "baseSha256": [
         "79f60d66f5ab01a3faa05a35a0410ed81143413ac66860a54d48ea340fa3af14"
       ],
-      "sha256": "f1975d66dd7ea9ea46bce19dd0187cda59efef11dd38f904bede7fb16284f77b"
+      "sha256": "f1975d66dd7ea9ea46bce19dd0187cda59efef11dd38f904bede7fb16284f77b",
+      "patch": true
     },
     "bin/omarchy-toggle-input-device": {
       "baseSha256": [
@@ -369,13 +379,15 @@
       "baseSha256": [
         "7bc95f8a0a3ae35cfd81453e08194f5660c27cf59528c7d95b4345f362030b60"
       ],
-      "sha256": "d5b92bcc3185cac5443235c6a37e5d10dfb4b5f1b29ec4251e4ac7a4d53589c2"
+      "sha256": "d5b92bcc3185cac5443235c6a37e5d10dfb4b5f1b29ec4251e4ac7a4d53589c2",
+      "patch": true
     },
     "bin/omarchy-voxtype-install": {
       "baseSha256": [
         "72e582bb5c0610375ee5517ed9e3d4d7e6742a3fd82a6b4b1c4b453de418c525"
       ],
-      "sha256": "b43d815c916a4d9477e518378adf57e376ca898a5ff477130f64e237275ebc35"
+      "sha256": "b43d815c916a4d9477e518378adf57e376ca898a5ff477130f64e237275ebc35",
+      "patch": true
     },
     "bin/omarchy-voxtype-remove": {
       "baseSha256": [
@@ -387,7 +399,8 @@
       "baseSha256": [
         "25664986469a3a32f7739cd18c23cc6f3914026375f35577b3d30ab968d94738"
       ],
-      "sha256": "b7cb7779857f7c96ecdadfec32ed221038a93cd30d560422d9a4eebe9b46bf50"
+      "sha256": "b7cb7779857f7c96ecdadfec32ed221038a93cd30d560422d9a4eebe9b46bf50",
+      "patch": true
     },
     "config/niri/config.kdl": {
       "baseSha256": [
@@ -417,7 +430,7 @@
       "baseSha256": [
         null
       ],
-      "sha256": "e050133901dcb289457e2c54b1442c6040768076c1853c86385dfbcb1682c1fd"
+      "sha256": "b3434ee5531ffcf0f9c8097cff402af0ec77051b8ceda9f2a9be61088c2523b1"
     },
     "default/niri/window-management.kdl": {
       "baseSha256": [
@@ -429,7 +442,8 @@
       "baseSha256": [
         "027096cc20b52f3073c7d61ad43ff1fc8fddeb127b05b41c129b0a97826cecb2"
       ],
-      "sha256": "05fca839b26df6a124e49041ae1101665ee6d14a77a2ae4cd2e2e135415c6345"
+      "sha256": "05fca839b26df6a124e49041ae1101665ee6d14a77a2ae4cd2e2e135415c6345",
+      "patch": true
     },
     "default/wayland-sessions/omarchy-niri.desktop": {
       "baseSha256": [
@@ -453,7 +467,8 @@
       "baseSha256": [
         "f5901092617ae62645597199270afd4dfb0644d596bdfff16e1834fca6ad7243"
       ],
-      "sha256": "9182b0dfb60b6ee45176fed54abc72a7ca406cbcd977fe7b684c6983e7681a7b"
+      "sha256": "9182b0dfb60b6ee45176fed54abc72a7ca406cbcd977fe7b684c6983e7681a7b",
+      "patch": true
     },
     "shell/Commons/qmldir": {
       "baseSha256": [
@@ -465,7 +480,8 @@
       "baseSha256": [
         "96245f2da8d38baa0017caa285d596c485bd19a3a4d2cd1675bee9d84ffba42d"
       ],
-      "sha256": "c700f8d711e0ea7418d8a62822b0dd33e126d65dbc65fc623d926e01373ac30b"
+      "sha256": "c700f8d711e0ea7418d8a62822b0dd33e126d65dbc65fc623d926e01373ac30b",
+      "patch": true
     },
     "shell/Ui/PopupCard.qml": {
       "baseSha256": [
@@ -477,19 +493,22 @@
       "baseSha256": [
         "1f345f795fe6633a7eb0934b677b86f6c359e0b062567521eeeec7dbf46987c1"
       ],
-      "sha256": "75d04021d898c395f4329e43ef93e206102a277900e6a935fe6e84d13346d053"
+      "sha256": "75d04021d898c395f4329e43ef93e206102a277900e6a935fe6e84d13346d053",
+      "patch": true
     },
     "shell/plugins/bar/indicators/ScreenRecording.qml": {
       "baseSha256": [
         "e336f4e14e0875fe56cb0c1008799506eb5023051c80e530b9e1f35fedbce2df"
       ],
-      "sha256": "38d5fb6b84c39bd8488d0420710a070bdcf696b89a6d94d2be73230b11f3637e"
+      "sha256": "38d5fb6b84c39bd8488d0420710a070bdcf696b89a6d94d2be73230b11f3637e",
+      "patch": true
     },
     "shell/plugins/bar/widgets/ActiveWindow.qml": {
       "baseSha256": [
         "e53bbf968f78a9c4748c1872d6b34e1914070fc170641730bc2f7b4bce4e0173"
       ],
-      "sha256": "b9e7310b28df42e18f1eea41380e4479736c26d96f6e645e8c695fa90a04f6aa"
+      "sha256": "b9e7310b28df42e18f1eea41380e4479736c26d96f6e645e8c695fa90a04f6aa",
+      "patch": true
     },
     "shell/plugins/bar/widgets/KeyboardLayout.qml": {
       "baseSha256": [
@@ -507,7 +526,8 @@
       "baseSha256": [
         "3f0a265a09f7957e8f5d74666595d3136ec64899c414426190460f9e2098e701"
       ],
-      "sha256": "fbc1a85af21cd42663e5d75fc4b07732830fb386c514b057683d1bc9a22e5e7c"
+      "sha256": "fbc1a85af21cd42663e5d75fc4b07732830fb386c514b057683d1bc9a22e5e7c",
+      "patch": true
     },
     "shell/plugins/notifications/Service.qml": {
       "baseSha256": [
@@ -520,7 +540,8 @@
       "baseSha256": [
         "2f3f95e5fc75af2af1f1af418a65469c37714b2bec38cfd2206bdd3f1f1b0e69"
       ],
-      "sha256": "ee9bdce68120b9a2a5bede81bf4955a95d75a68fb2e4a0e38d01194c4b7cb437"
+      "sha256": "ee9bdce68120b9a2a5bede81bf4955a95d75a68fb2e4a0e38d01194c4b7cb437",
+      "patch": true
     },
     "shell/plugins/services/idle/Service.qml": {
       "baseSha256": [
@@ -533,7 +554,8 @@
       "baseSha256": [
         "721cd63d2404859918e28f92420e87369328c26fcef7df821443baa16d0b1897"
       ],
-      "sha256": "7ae25d8ce765c5f91e0f7d92769feaf5dd34bb5630574c78bce9180a4e43fb08"
+      "sha256": "7ae25d8ce765c5f91e0f7d92769feaf5dd34bb5630574c78bce9180a4e43fb08",
+      "patch": true
     }
   },
   "keybindingsScope": "Directional column/workspace navigation and movement only. Horizontal focus continues to adjacent monitors; remaining bindings use Omarchy key positions where supported by Niri."

@@ -1,0 +1,69 @@
+--- a/shell/plugins/lock/Service.qml
++++ b/shell/plugins/lock/Service.qml
+@@ -76,9 +76,9 @@
+     sessionLock.locked = true
+   }
+ 
+-  // ext-session-lock outlives its client, and a restart carries no lock over, so
+-  // a session locked this early is an orphan behind Hyprland's failsafe. Outputs
+-  // are often still absent here, so ask until the answer means something.
++  // ext-session-lock outlives its client. A marker belonging to this compositor
++  // tells a replacement shell to reacquire the orphaned lock; retry while IPC
++  // is unavailable instead of treating a failed query as an unlocked session.
+   function checkStrandedLock() {
+     if (strandedLockResolved || strandedLockCheckProc.running) return
+ 
+@@ -135,7 +135,7 @@
+     lockRequested = true
+     armBlankTimer()
+     logEvent("lock-requested")
+-    queueSessionLock()
++    if (!lockClearProc.running) lockMarkerProc.running = true
+ 
+     Qt.callLater(function() {
+       root.refreshBackground()
+@@ -155,6 +155,7 @@
+     resetAuthenticationState()
+     idleBlankTimer.stop()
+     sessionLock.locked = false
++    lockClearProc.running = true
+     logEvent("unlocked")
+     runWake()
+   }
+@@ -386,11 +387,34 @@
+     }
+   }
+ 
++  // Commit intent before requesting the compositor lock. A shell crash must
++  // leave enough information for the next shell to reacquire the same lock.
++  Process {
++    id: lockMarkerProc
++    command: ["omarchy-niri", "lock-mark"]
++    onExited: function(exitCode) {
++      if (exitCode === 0 && root.lockRequested) root.queueSessionLock()
++      else if (exitCode !== 0) {
++        root.lockRequested = false
++        root.logEvent("lock-denied: cannot persist recovery state")
++      }
++    }
++  }
++  Process {
++    id: lockClearProc
++    command: ["omarchy-niri", "lock-clear"]
++    onExited: {
++      // A new lock requested during unlock must persist intent after the old
++      // marker has been removed, before acquiring the compositor lock.
++      if (root.lockRequested) lockMarkerProc.running = true
++    }
++  }
++
+   Process {
+     id: strandedLockCheckProc
+-    command: ["bash", "-c", "omarchy-hyprland-session-locked"]
++    command: ["omarchy-niri", "lock-status"]
+     onExited: function(exitCode) {
+-      // No output to read the lock off yet.
++      // The compositor did not answer; keep recovery pending.
+       if (exitCode === 2) return
+ 
+       root.strandedLockResolved = true

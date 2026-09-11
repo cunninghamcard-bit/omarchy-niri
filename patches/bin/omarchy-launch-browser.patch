@@ -1,0 +1,10 @@
+--- a/bin/omarchy-launch-browser
++++ b/bin/omarchy-launch-browser
+@@ -29,6 +29,6 @@
+   fi
+ done
+ 
+-if [[ -n $url && -n ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
++if [[ -n $url && -n ${NIRI_SOCKET:-} ]]; then
+   omarchy-hyprland-focus-app "^$(basename "$browser_exec" -stable).*$" || true
+ fi

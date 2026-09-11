@@ -1,0 +1,9 @@
+--- a/bin/omarchy-install-preinstalls
++++ b/bin/omarchy-install-preinstalls
+@@ -32,5 +32,5 @@
+   # Last, so a failure above leaves the opt-out intact rather than restoring
+   # keybindings for apps that never came back
+   rm -f ~/.local/state/omarchy/preinstalls-removed
+-  hyprctl reload
++  niri msg action load-config-file
+ fi

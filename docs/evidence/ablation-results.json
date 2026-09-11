@@ -1,0 +1,176 @@
+{
+  "baseline": "f0eca34c34b1b6ddfed845ca8db56183dec4f87f",
+  "variants": [
+    {
+      "variant": "baseline",
+      "expected_failure": false,
+      "production_lines": 11466,
+      "python_lines": 851,
+      "python_functions": 46,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "tests": 26,
+      "failed_tests": [],
+      "matched_expectation": true,
+      "runtime_files": 87,
+      "runtime_byte_changes": []
+    },
+    {
+      "variant": "patches-only",
+      "expected_failure": false,
+      "production_lines": 4498,
+      "python_lines": 860,
+      "python_functions": 47,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "tests": 29,
+      "failed_tests": [],
+      "matched_expectation": true,
+      "runtime_files": 87,
+      "runtime_byte_changes": []
+    },
+    {
+      "variant": "installer-only",
+      "expected_failure": false,
+      "production_lines": 11460,
+      "python_lines": 845,
+      "python_functions": 47,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "tests": 26,
+      "failed_tests": [],
+      "matched_expectation": true,
+      "runtime_files": 87,
+      "runtime_byte_changes": []
+    },
+    {
+      "variant": "runtime-extraction-rejected",
+      "expected_failure": false,
+      "production_lines": 11506,
+      "python_lines": 891,
+      "python_functions": 52,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "tests": 26,
+      "failed_tests": [],
+      "matched_expectation": true,
+      "runtime_files": 87,
+      "runtime_byte_changes": [
+        "default/niri/bridge.py",
+        "default/niri/desktop.py"
+      ]
+    },
+    {
+      "variant": "dead-code-only",
+      "expected_failure": false,
+      "production_lines": 11461,
+      "python_lines": 846,
+      "python_functions": 45,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "tests": 26,
+      "failed_tests": [],
+      "matched_expectation": true,
+      "runtime_files": 87,
+      "runtime_byte_changes": [
+        "default/niri/desktop.py"
+      ]
+    },
+    {
+      "variant": "combined",
+      "expected_failure": false,
+      "production_lines": 4484,
+      "python_lines": 846,
+      "python_functions": 47,
+      "exit_codes": [
+        0,
+        0
+      ],
+      "tests": 29,
+      "failed_tests": [],
+      "matched_expectation": true,
+      "runtime_files": 87,
+      "runtime_byte_changes": [
+        "default/niri/desktop.py"
+      ]
+    },
+    {
+      "variant": "without-refresh-recovery",
+      "expected_failure": true,
+      "production_lines": 4462,
+      "python_lines": 824,
+      "python_functions": 47,
+      "exit_codes": [
+        1,
+        0
+      ],
+      "tests": 29,
+      "failed_tests": [
+        "test_refresh_prefix_publish_failure_restores_runtime_and_pointer (test_installer.InstallerTests.test_refresh_prefix_publish_failure_restores_runtime_and_pointer)",
+        "test_recover_committed_refresh_keeps_new_publication (test_installer.InstallerTests.test_recover_committed_refresh_keeps_new_publication)",
+        "test_recover_interrupted_refresh_restores_prepublication_state (test_installer.InstallerTests.test_recover_interrupted_refresh_restores_prepublication_state)",
+        "test_refresh_state_write_failure_restores_old_pointer (test_installer.InstallerTests.test_refresh_state_write_failure_restores_old_pointer)"
+      ],
+      "matched_expectation": true
+    },
+    {
+      "variant": "without-conflict-preflight",
+      "expected_failure": true,
+      "production_lines": 4481,
+      "python_lines": 843,
+      "python_functions": 47,
+      "exit_codes": [
+        1,
+        0
+      ],
+      "tests": 29,
+      "failed_tests": [
+        "test_restore_preflights_conflicts_without_partial_restore (test_installer.InstallerTests.test_restore_preflights_conflicts_without_partial_restore)"
+      ],
+      "matched_expectation": true
+    },
+    {
+      "variant": "without-output-hash",
+      "expected_failure": true,
+      "production_lines": 4482,
+      "python_lines": 844,
+      "python_functions": 47,
+      "exit_codes": [
+        1,
+        0
+      ],
+      "tests": 29,
+      "failed_tests": [
+        "test_damaged_payload_is_rejected (test_installer.InstallerTests.test_damaged_payload_is_rejected)",
+        "test_corrupt_patch_output_is_rejected (test_payload.PayloadTests.test_corrupt_patch_output_is_rejected)"
+      ],
+      "matched_expectation": true
+    },
+    {
+      "variant": "without-ipc-errors",
+      "expected_failure": true,
+      "production_lines": 4484,
+      "python_lines": 846,
+      "python_functions": 47,
+      "exit_codes": [
+        1,
+        0
+      ],
+      "tests": 29,
+      "failed_tests": [
+        "test_ipc_request_and_error_contract (test_bridge.NiriBridgeTests.test_ipc_request_and_error_contract)"
+      ],
+      "matched_expectation": true
+    }
+  ]
+}

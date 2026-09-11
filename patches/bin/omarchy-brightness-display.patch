@@ -1,0 +1,40 @@
+--- a/bin/omarchy-brightness-display
++++ b/bin/omarchy-brightness-display
+@@ -29,7 +29,13 @@
+   brightnessctl -d "$1" -m 2>/dev/null | awk -F, '{ gsub("%", "", $4); print $4; found=1 } END{ exit !found }'
+ }
+ 
+-[[ -n $monitor ]] || monitor="$(omarchy-hyprland-monitor-focused 2>/dev/null || true)"
++if [[ -z $monitor ]]; then
++  if [[ -n ${NIRI_SOCKET:-} ]]; then
++    monitor=$(omarchy-niri focused-output)
++  else
++    monitor=$(omarchy-hyprland-monitor-focused 2>/dev/null || true)
++  fi
++fi
+ 
+ monitor_is_internal() {
+   [[ $monitor =~ ^(eDP|LVDS|DSI)- ]]
+@@ -58,18 +64,10 @@
+ fi
+ 
+ step="$1"
+-
+-if [[ $step == "off" ]]; then
+-  hyprctl dispatch 'hl.dsp.dpms({ action = "disable" })' >/dev/null 2>&1
+-  exit 0
+-elif [[ $step == "on" ]]; then
+-  # Skip the dispatch when every active display is already lit: a redundant
+-  # DPMS enable right after system resume forces another modeset, which blanks
+-  # the panel for a beat (visible flash at the unlock screen).
+-  hyprctl monitors -j 2>/dev/null | jq -e '[.[] | select(.disabled == false)] | length > 0 and all(.dpmsStatus)' >/dev/null 2>&1 && exit 0
+-  hyprctl dispatch 'hl.dsp.dpms({ action = "enable" })' >/dev/null 2>&1
+-  exit 0
+-fi
++case $step in
++  off) exec niri msg action power-off-monitors ;;
++  on) exec niri msg action power-on-monitors ;;
++esac
+ 
+ # Drop overlapping brightness key events so concurrent invocations do not race.
+ # Hardware key repeat present on some devices can otherwise glitch OSD rendering.

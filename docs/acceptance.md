@@ -1,6 +1,8 @@
-# Acceptance — Omarchy Niri 0.1.0
+# Acceptance — Omarchy Niri
 
-Test date: 2026-09-11. This is an independently installable replacement layer;
+Test date: 2026-09-11. Graphical evidence was captured on 0.1.0; the 0.2.0
+simplification has separate reconstruction and ablation evidence below.
+This is an independently installable replacement layer;
 its scope is the existing Omarchy 4.0.2 desktop and first-party shell services.
 It is not a claim of compatibility with every third-party Hyprland plugin or
 with arbitrary future Omarchy versions.
@@ -28,12 +30,14 @@ with arbitrary future Omarchy versions.
   publication rollback, edited-file preservation, safe uninstall preflight and recovery after interrupted update publication.
 - 11 JavaScript assertions: workspace IDs/output filtering, focus, window
   occupancy, keyboard layout events, unknown events and reconnect snapshots.
-- Payload inventory, all 87 SHA-256 checks, and Bash syntax passed.
+- Initial payload inventory, all 87 SHA-256 checks, and Bash syntax passed.
+  Version 0.2.0 stores 65 complete files and 22 patches, producing the same 87
+  managed paths. See [simplification experiments](ablation.md) for exact results.
 - Two independent acceptance agents reviewed compositor/shell contracts and
   installer failure paths. Their findings were fixed and rechecked.
 - CI repeats the portable checks; CI alone does not prove a graphical session.
 
-## Runtime results
+## Runtime results (0.1.0)
 
 | Area | Evidence and result |
 | --- | --- |
@@ -89,7 +93,7 @@ Run portable checks from the checkout:
 ```sh
 python3 -m unittest discover -s tests -v
 node tests/niri-model-test.cjs
-python3 tests/check_payload.py
+python3 tests/check_payload.py --base /path/to/clean/omarchy-4.0.2
 ```
 
 Inside a disposable graphical Niri login, run

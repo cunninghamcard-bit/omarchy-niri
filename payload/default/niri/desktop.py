@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import re
 import subprocess
-import time
 from bridge import atomic_write, request, theme
 
 ROOT = Path.home() / '.config/niri'
@@ -14,10 +13,6 @@ STATE = Path.home() / '.local/state/omarchy/niri'
 
 def run(*args, **kwargs):
   return subprocess.run(args, check=True, **kwargs)
-
-
-def action(name, **values):
-  return request({'Action': {name: values}})
 
 
 def settings():

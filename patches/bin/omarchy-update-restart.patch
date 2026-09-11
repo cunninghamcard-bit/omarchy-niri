@@ -1,0 +1,15 @@
+--- a/bin/omarchy-update-restart
++++ b/bin/omarchy-update-restart
+@@ -28,9 +28,9 @@
+   confirm_reboot "Updates require reboot. Ready?"
+ fi
+ 
+-running_hyprland=$(readlink /proc/$(pgrep -x Hyprland)/exe 2>/dev/null)
+-if [[ $running_hyprland == *"(deleted)"* ]]; then
+-  confirm_reboot "Hyprland has been updated. Reboot?"
++running_niri=$(readlink /proc/$(pgrep -x niri)/exe 2>/dev/null)
++if [[ $running_niri == *"(deleted)"* ]]; then
++  confirm_reboot "Niri has been updated. Reboot?"
+ fi
+ 
+ for file in "$HOME"/.local/state/omarchy/restart-*-required; do

@@ -1,39 +1,57 @@
 # Maintenance boundary
 
-The extension replaces the compositor once. It has no Hyprland/Niri backend
-switch and carries no alternate distribution package set. The original package
-installation remains the source for unmodified Omarchy files.
+The extension has one Niri session and uses Omarchy's existing Quickshell desktop.
+It does not carry a Hyprland backend or its own distribution package set.
 
-`payload/` contains the adapted Omarchy files. `manifest.json` records their
-payload SHA-256 and accepted source SHA-256 values. The alternate source hashes
-were measured on Try Omarchy's packaged 4.0.2 ARM runtime; its packaged scripts
-are symlinks into `/usr/bin`, and its idle service differs from the Git tag.
+## Source and installation
 
-Installation materializes packaged command links into an immutable private
-runtime, validates Niri configuration, then selects the new runtime through
-`/etc/omarchy.conf`. Login uses UWSM and the packaged Niri session. The Omarchy
-Quickshell framework, plugins and UI remain in that runtime, with Niri state
-provided through the official event stream and JSON socket.
+`payload/` holds Niri-specific code and complete replacements. `patches/` holds
+standard unified diffs for small changes to large Omarchy files. A patch is used
+only when it is substantially smaller than the file and has one supported base.
+Files with distinct official/ARM source variants remain complete replacements.
 
-An upgrade creates a new generation. A publication journal lets the next
-management command recover if a process dies between manager and runtime
-publication; the command wrapper can find the previous manager during that gap. Unknown source changes fail before pointer
-activation. User includes are validated against the new defaults. Existing
-processes should be restarted by logging out and in. Old generations remain
-available until uninstall; this intentionally trades local disk space for
-recoverability.
+`manifest.json` maps each installed path to accepted base hashes and its final
+SHA-256. `patch: true` selects `patches/<path>.patch`; otherwise the source is
+`payload/<path>`. No custom patch interpreter or runtime dispatch layer is needed.
 
-The update package hook is scoped to Omarchy. It disables the two packaged
-Hyprland reload-guard hooks through `/etc/pacman.d/hooks` overrides while this
-extension is installed. Uninstall restores those overrides as well as the old
-session, environment, sudo path and owned user configuration.
+Installation follows one path:
 
-The installer records each original file and intended replacement hash before
-writing it. Uninstall first archives later edits, then restores the original.
-It retains dependencies and archived generations; it never removes applications
-or user documents. Tests exercise interrupted writes and conflict detection.
+1. Check the packaged Omarchy source against the manifest.
+2. Copy it into a private generation, materializing `/usr/bin` command symlinks.
+3. Copy replacements and apply standard patches with `git apply`, limited to
+   their declared paths. Verify every resulting managed file's exact hash.
+4. Validate Niri configuration and configure the session, recording original
+   managed files for restoration.
 
-Niri's scrolling model is deliberately preserved. Hyprland-specific temporary
-capture submaps and Lua configuration files are not emulated; Niri supplies its
-own screenshot interaction and KDL configuration. Legacy command names that
-Omarchy itself calls delegate directly to Niri implementations.
+The packaged `/usr/share/omarchy` and `/usr/bin/omarchy-*` files stay intact.
+`/etc/omarchy.conf` selects the private runtime. UWSM launches the Niri session;
+Quickshell reads compositor state from Niri's socket and event stream.
+
+## Updates and restoration
+
+`sudo python3 manage.py refresh` from a newer checkout publishes that extension
+and a newly assembled runtime. The pacman hook invokes the installed manager to
+reapply it to updated Omarchy packages. These are the same refresh operation;
+the hook does not fetch a newer Git checkout.
+
+Refresh validates the user's existing includes before activation. A publication
+journal records previous/new generations. Both ordinary failures and a later
+command recovering from interruption use the same recovery function. The command
+wrapper can find the previous manager during the directory-rename gap.
+
+Managed changes share one backup/link/write implementation. Uninstall archives
+subsequent edits before restoring originals. Ownership checks prevent unrelated
+files from being removed. Old generations remain archived; dependencies and user
+documents are not deleted. The [ablation experiments](ablation.md) demonstrate
+why rollback, conflict preflight and output validation are retained.
+
+## Runtime scope
+
+Simple legacy `omarchy-hyprland-*` command names remain because Omarchy calls
+them. Their implementations invoke Niri; replacing these short scripts with a
+registry would add another layer without simplifying their behavior.
+
+Niri's scrolling layout is preserved. Hyprland Lua/submaps are not emulated:
+configuration is KDL and screenshot interaction is native to Niri. Shared shell
+UI remains upstream code plus the small patches. Full desktop/physical-device
+coverage is described separately in [acceptance](acceptance.md).

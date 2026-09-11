@@ -229,6 +229,51 @@ class InstallerTests(unittest.TestCase):
     self.assertTrue(new_generation.exists())
     self.assertFalse((state / "refresh-transaction.json").exists())
 
+  def test_refresh_from_new_checkout_publishes_new_manager_and_keeps_owner(self):
+    state = self.tmp / "state"
+    state.mkdir()
+    (state / "generations").mkdir()
+    old_generation = self.tmp / "old-generation"
+    old_generation.mkdir()
+    (state / "current").symlink_to(old_generation)
+    home = self.tmp / "home"
+    (home / ".config" / "niri").mkdir(parents=True)
+    (home / ".config" / "niri" / "config.kdl").write_text("include \"omarchy.kdl\"\n")
+    prefix = self.tmp / "prefix"
+    prefix.mkdir()
+    (prefix / "manage.py").write_text("old-manager")
+    owner = "stable-owner"
+    (prefix / ".omarchy-niri-owner").write_text(owner + "\n")
+    (state / "installed.json").write_text(json.dumps({
+      "owner": owner, "user": "testuser", "base": str(self.tmp),
+      "generation": str(old_generation), "version": "old"}))
+    checkout = self.tmp / "new-checkout"
+    checkout.mkdir()
+    (checkout / "manage.py").write_text("new-manager")
+    (checkout / "manifest.json").write_text(json.dumps({"version": "new"}))
+    old_state, old_prefix, old_here = manager.STATE, manager.PREFIX, manager.HERE
+    manager.STATE, manager.PREFIX, manager.HERE = state, prefix, checkout
+    self.addCleanup(lambda: setattr(manager, "STATE", old_state))
+    self.addCleanup(lambda: setattr(manager, "PREFIX", old_prefix))
+    self.addCleanup(lambda: setattr(manager, "HERE", old_here))
+    manager_copy = mock.Mock(side_effect=lambda _base, stage: (
+      stage.mkdir(), (stage / "default" / "niri").mkdir(parents=True),
+      (stage / "default" / "niri" / "config.kdl").write_text("")))
+    account = SimpleNamespace(pw_dir=str(home), pw_uid=os.getuid(), pw_gid=os.getgid())
+    with mock.patch.object(manager, "copy_runtime", manager_copy), \
+        mock.patch.object(manager, "as_user"), \
+        mock.patch.object(manager.pwd, "getpwnam", return_value=account):
+      manager.refresh(self.tmp)
+
+    installed = json.loads((state / "installed.json").read_text())
+    self.assertEqual(installed["owner"], owner)
+    self.assertEqual(installed["version"], "new")
+    self.assertEqual(os.readlink(state / "current"), installed["generation"])
+    self.assertEqual((prefix / "manage.py").read_text(), "new-manager")
+    self.assertEqual((prefix / ".omarchy-niri-owner").read_text().strip(), owner)
+    self.assertFalse((prefix.parent / "prefix-previous").exists())
+    self.assertFalse((state / "refresh-transaction.json").exists())
+
   def _runtime_fixture(self, base_content="base", payload_content="payload"):
     root = self.tmp / ("fixture-" + next(tempfile._get_candidate_names()))
     base = root / "base"

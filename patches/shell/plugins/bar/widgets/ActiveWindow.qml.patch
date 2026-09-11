@@ -1,0 +1,18 @@
+--- a/shell/plugins/bar/widgets/ActiveWindow.qml
++++ b/shell/plugins/bar/widgets/ActiveWindow.qml
+@@ -14,8 +14,14 @@
+   readonly property int maxLabelWidth: Number(setting("maxWidth", 280))
+ 
+   visible: title !== "" && !vertical
+-  implicitWidth: visible ? Math.min(maxLabelWidth, labelText.implicitWidth) + Style.spacing.controlPaddingX * 2 : 0
++  implicitWidth: visible ? Math.min(maxLabelWidth, titleMetrics.width) + Style.spacing.controlPaddingX * 2 : 0
+   implicitHeight: barSize
++
++  TextMetrics {
++    id: titleMetrics
++    text: root.title
++    font: labelText.font
++  }
+ 
+   Behavior on implicitWidth {
+     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }

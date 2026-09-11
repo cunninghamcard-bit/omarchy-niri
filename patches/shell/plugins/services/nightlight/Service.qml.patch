@@ -1,0 +1,25 @@
+--- a/shell/plugins/services/nightlight/Service.qml
++++ b/shell/plugins/services/nightlight/Service.qml
+@@ -46,19 +46,17 @@
+   }
+ 
+   function runApply(temp) {
+-    applyProcess.command = ["bash", "-lc",
+-      "pgrep -x hyprsunset >/dev/null || { setsid uwsm-app -- hyprsunset >/dev/null 2>&1 & sleep 1; }; " +
+-      "hyprctl hyprsunset temperature " + Number(temp)]
++    applyProcess.command = ["omarchy-toggle-nightlight", "--temperature", String(temp)]
+     applyProcess.running = true
+   }
+ 
+   Process {
+     id: statusProbe
+-    command: ["hyprctl", "hyprsunset", "temperature"]
++    command: ["omarchy-toggle-nightlight", "--status"]
+     stdout: StdioCollector {
+       waitForEnd: true
+       onStreamFinished: {
+-        root.temperature = NightlightModel.temperatureFromOutput(text)
++        try { root.temperature = JSON.parse(text).temperature } catch (error) { root.temperature = null }
+         root.stateLoaded = true
+       }
+     }

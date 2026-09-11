@@ -1,0 +1,11 @@
+--- a/bin/omarchy-remove-preinstalls
++++ b/bin/omarchy-remove-preinstalls
+@@ -10,7 +10,7 @@
+ 
+   mkdir -p ~/.local/state/omarchy
+   touch ~/.local/state/omarchy/preinstalls-removed
+-  hyprctl reload
++  niri msg action load-config-file
+ 
+   # Remove mise stubs
+   rm -f ~/.local/bin/codex ~/.local/bin/claude ~/.local/bin/gemini ~/.local/bin/copilot \

@@ -1,0 +1,17 @@
+--- a/shell/plugins/panels/monitor/Panel.qml
++++ b/shell/plugins/panels/monitor/Panel.qml
+@@ -300,12 +300,12 @@
+     if (!name) return
+     if (enabled && root.enabledDisplayCount <= 1) return
+ 
+-    actionProc.command = ["hyprctl", "keyword", "monitor", name + (enabled ? ",disable" : ",preferred,auto,auto")]
++    actionProc.command = ["omarchy-niri", "output", name, enabled ? "off" : "on"]
+     if (!actionProc.running) actionProc.running = true
+   }
+ 
+   function setScale(scale) {
+-    actionProc.command = ["bash", "-c", "omarchy-hyprland-monitor-scaling " + scale]
++    actionProc.command = ["omarchy-niri", "scale", String(scale)]
+     if (!actionProc.running) actionProc.running = true
+   }
+ 

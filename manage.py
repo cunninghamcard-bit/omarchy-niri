@@ -56,31 +56,39 @@ def switch(target):
   temporary.replace(STATE / 'current')
 
 
+def apply_payload(stage, manifest):
+  """Apply replacements and small upstream patches, then verify exact output bytes."""
+  for name, entry in manifest['files'].items():
+    target = stage / name
+    if entry.get('patch'):
+      run('git', 'apply', '--no-index', '--whitespace=nowarn', '--include=' + name,
+        str(HERE / 'patches' / (name + '.patch')), cwd=stage)
+    else:
+      target.parent.mkdir(parents=True, exist_ok=True)
+      target.unlink(missing_ok=True)
+      shutil.copy2(HERE / 'payload' / name, target)
+    if digest(target) != entry['sha256']:
+      raise ValueError('Damaged extension payload: ' + name)
+
+
 def copy_runtime(base, stage):
   for name in ('bin', 'shell', 'default', 'config'):
     if not (base / name).is_dir():
       raise ValueError(f'{base} is not an Omarchy runtime: missing {name}')
   manifest = json.loads((HERE / 'manifest.json').read_text())
-  for name, hashes in manifest['files'].items():
+  for name, entry in manifest['files'].items():
     original = base / name
     actual = hashlib.sha256(original.read_bytes()).hexdigest() if original.is_file() else None
-    if actual not in hashes['baseSha256']:
+    if actual not in entry['baseSha256']:
       raise ValueError('Unsupported upstream change in ' + name + '; current generation will be retained')
-    if digest(HERE / 'payload' / name) != hashes['sha256']:
-      raise ValueError('Damaged extension payload: ' + name)
   shutil.copytree(base, stage, symlinks=True, ignore=shutil.ignore_patterns('.git', 'test', 'node_modules'))
-  # Packaged Omarchy's bin contains symlinks to /usr/bin. Materialize command
-  # files into the private generation so upgrades cannot change it in place.
+  # Packaged command symlinks point into /usr/bin; materialize before patching
+  # so both patching and later package upgrades leave the base untouched.
   for path in (stage / 'bin').iterdir():
     if path.is_symlink() and path.is_file():
-      content = path.read_bytes()
-      mode = path.stat().st_mode & 0o777
+      content, mode = path.read_bytes(), path.stat().st_mode & 0o777
       path.unlink(); path.write_bytes(content); path.chmod(mode)
-  for name in manifest['files']:
-    target = stage / name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.unlink(missing_ok=True)
-    shutil.copy2(HERE / 'payload' / name, target)
+  apply_payload(stage, manifest)
   run('niri', 'validate', '--config', str(stage / 'default/niri/config.kdl'))
   for directory, dirs, files in os.walk(stage):
     os.chown(directory, 0, 0)
@@ -128,12 +136,15 @@ class Changes:
     self.items[str(path)]['after'] = digest(path)
     self.flush()
 
+  def conflicts(self):
+    return [key for key, item in self.items.items()
+      if digest(Path(key)) not in (item.get('after', item['before']), item['before'])]
+
   def flush(self):
     atomic(self.file, json.dumps(self.items, indent=2) + '\n', 0o600)
 
   def restore(self, force=False):
-    conflicts = [key for key, item in self.items.items()
-      if digest(Path(key)) not in (item.get('after', item['before']), item['before'])]
+    conflicts = self.conflicts()
     if conflicts and not force:
       return conflicts
     conflicts = []
@@ -174,12 +185,8 @@ def configure_user(user, runtime, changes):
     if name == 'config.kdl':
       changes.write(path, source.read_text())
     else:
-      changes.remember(path)
       target = STATE / 'current/default/niri' / source.name
-      changes.items[str(path)]['after'] = 'link:' + str(target)
-      changes.flush()
-      path.unlink(missing_ok=True)
-      path.symlink_to(target)
+      changes.link(path, target)
     os.chown(path, account.pw_uid, account.pw_gid, follow_symlinks=False)
   for name in ('input.kdl', 'outputs.kdl', 'bindings.kdl'):
     path = directory / name
@@ -333,17 +340,13 @@ def refresh(base=None):
   old_state = json.dumps(state, indent=2) + '\n'
   staged = PREFIX.with_name(PREFIX.name + '-next')
   archive = PREFIX.with_name(PREFIX.name + '-previous')
-  replaced = False
-  archived = False
   try:
     if HERE != PREFIX:
       shutil.rmtree(staged, ignore_errors=True)
       shutil.copytree(HERE, staged, ignore=shutil.ignore_patterns('.git', '__pycache__', 'test-artifacts'))
       shutil.rmtree(archive, ignore_errors=True)
       PREFIX.rename(archive)
-      archived = True
       staged.rename(PREFIX)
-      replaced = True
     state.setdefault('owner', uuid.uuid4().hex)
     atomic(PREFIX / '.omarchy-niri-owner', state['owner'] + '\n', 0o600)
     switch(generation)
@@ -351,17 +354,15 @@ def refresh(base=None):
     state['version'] = json.loads((HERE / 'manifest.json').read_text())['version']
     atomic(STATE / 'installed.json', json.dumps(state, indent=2) + '\n')
   except Exception:
-    switch(previous)
-    atomic(STATE / 'installed.json', old_state)
-    if replaced:
-      shutil.rmtree(PREFIX)
-    if archived:
-      archive.rename(PREFIX)
-    shutil.rmtree(staged, ignore_errors=True)
-    shutil.rmtree(generation, ignore_errors=True)
-    journal.unlink(missing_ok=True)
+    # The journal records enough state for the same recovery path used after
+    # a process interruption. Restore old metadata first so recovery takes the
+    # rollback branch even if failure happened after publication.
+    try:
+      atomic(STATE / 'installed.json', old_state)
+    finally:
+      recover_refresh()
     raise
-  if archived:
+  if HERE != PREFIX:
     shutil.rmtree(archive)
   journal.unlink()
   (STATE / 'refresh-failed').unlink(missing_ok=True)
@@ -379,8 +380,7 @@ def uninstall():
   if (STATE / 'transaction.json').exists():
     raise ValueError('Incomplete installation; recover it before uninstalling')
   changes = Changes(STATE)
-  conflicts = [key for key, item in changes.items.items()
-    if digest(Path(key)) not in (item.get('after', item['before']), item['before'])]
+  conflicts = changes.conflicts()
   for key in conflicts:
     path = Path(key)
     if path.exists() or path.is_symlink():

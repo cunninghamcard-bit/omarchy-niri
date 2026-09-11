@@ -7,6 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: omacom/omarchy
+          ref: 346e69e1cec6c4e8924531874af6ba010a1bc99e
+          path: test-artifacts/upstream
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -17,4 +24,10 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: '1'
       - run: node tests/niri-model-test.cjs
-      - run: python3 tests/check_payload.py
+      - run: python3 tests/check_payload.py --base test-artifacts/upstream
+      - run: python3 tests/ablation.py --base test-artifacts/upstream
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ablation-results
+          path: test-artifacts/ablation/
