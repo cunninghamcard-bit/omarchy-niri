@@ -1,0 +1,9 @@
+Running as unit: run-p8004-i10202.service
+ok
+{"locked":true,"requested":true,"pending":false,"sessionLocked":true,"secure":true,"realScreens":1,"passwordPam":true,"fingerprint":false,"authenticating":false,"lastEvent":"secure=true","lastEventAt":"2026-09-11T08:57:10.520Z"}
+{"locked":true,"requested":true,"pending":false,"sessionLocked":true,"secure":true,"realScreens":1,"passwordPam":true,"fingerprint":false,"authenticating":false,"lastEvent":"secure=true","lastEventAt":"2026-09-11T08:57:14.780Z"}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 6.661s
+             CPU time consumed: 1.094s
+                   Memory peak: 8.8M (swap: 0B)

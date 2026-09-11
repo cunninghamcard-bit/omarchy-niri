@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# omarchy:summary=Capture a Niri output, window, or selected region
+# omarchy:hidden=true
+
+set -euo pipefail
+mode=${1:-smart}
+processing=${2:-slurp}
+editor=${3:-tensaku-edit}
+[[ -f $HOME/.config/user-dirs.dirs ]] && source "$HOME/.config/user-dirs.dirs"
+output_dir=${OMARCHY_SCREENSHOT_DIR:-${XDG_PICTURES_DIR:-$HOME/Pictures}}
+mkdir -p "$output_dir"
+file="$output_dir/screenshot-$(date +'%Y-%m-%d_%H-%M-%S-%N').png"
+case $processing in slurp|copy|save) ;; *) echo "Invalid screenshot processing: $processing" >&2; exit 1 ;; esac
+case $mode in
+  fullscreen)
+    niri msg action screenshot-screen --path "$file" --show-pointer false >/dev/null
+    ;;
+  windows)
+    window=$(niri msg --json pick-window | jq -er '.id') || exit 0
+    niri msg action screenshot-window --id "$window" --path "$file" >/dev/null
+    ;;
+  smart|region)
+    region=$(slurp) || exit 0
+    grim -g "$region" "$file"
+    ;;
+  *) echo "Invalid screenshot mode: $mode" >&2; exit 1 ;;
+esac
+# Native niri capture writes asynchronously after acknowledging the action.
+deadline=$((SECONDS + 5))
+until [[ -s $file ]]; do
+  (( SECONDS < deadline )) || { echo "Screenshot was not written: $file" >&2; exit 1; }
+  sleep 0.05
+done
+case $processing in
+  copy) wl-copy --type image/png <"$file"; rm -f "$file" ;;
+  save) echo "$file" ;;
+  slurp)
+    wl-copy --type image/png <"$file"
+    echo "$file"
+    omarchy-notification-send "Screenshot saved to clipboard and file" "Click to edit" --image "$file" --exec "$editor" "$file" || true
+    ;;
+esac

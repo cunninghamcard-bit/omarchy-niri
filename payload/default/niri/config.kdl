@@ -1,0 +1,160 @@
+input {
+  keyboard { xkb { }; numlock; }
+  touchpad { natural-scroll; }
+  mouse { accel-profile "flat"; }
+}
+layout {
+  gaps 10
+  center-focused-column "never"
+  preset-column-widths {
+    proportion 0.33333
+    proportion 0.5
+    proportion 0.66667
+  }
+  default-column-width { proportion 0.5; }
+}
+prefer-no-csd
+hotkey-overlay { skip-at-startup; }
+screenshot-path "~/Pictures/Screenshot from %Y-%m-%d %H-%M-%S.png"
+spawn-at-startup "omarchy-niri-autostart"
+environment {
+  QT_QPA_PLATFORM "wayland"
+  QT_QPA_PLATFORMTHEME "qt6ct"
+  QT_WAYLAND_DISABLE_WINDOWDECORATION "1"
+  ELECTRON_OZONE_PLATFORM_HINT "auto"
+}
+window-rule {
+  match app-id=r#"^(org\.omarchy\.(floating|terminal|bash|btop|about)|TUI\.float|omacalc|dev\.tensaku\.Tensaku|qalculate-gtk|org\.gnome\.(Calculator|NautilusPreviewer)|xdg-desktop-portal-gtk)$"#
+  open-floating true
+}
+window-rule {
+  match app-id=r#"^org\.omarchy\.about$"#
+  default-column-width { fixed 920; }
+  default-window-height { fixed 480; }
+}
+window-rule {
+  match app-id=r#"^org\.omarchy\.screensaver$"#
+  open-fullscreen true
+}
+binds {
+  Mod+Return hotkey-overlay-title="Terminal" { spawn "omarchy-launch-terminal"; }
+  Mod+Shift+Return hotkey-overlay-title="Browser" { spawn "omarchy-launch-browser"; }
+  Mod+Shift+B { spawn "omarchy-launch-browser"; }
+  Mod+Alt+F { spawn "omarchy-launch-nautilus"; }
+  Mod+Shift+N { spawn "omarchy-launch-editor"; }
+  Mod+Space hotkey-overlay-title="Omarchy menu" { spawn "omarchy-menu" "toggle"; }
+  Mod+Alt+Space { spawn "omarchy-menu" "toggle" "apps"; }
+  Mod+Ctrl+Escape { spawn "omarchy-menu" "toggle" "system"; }
+  Mod+Ctrl+V { spawn "omarchy-shell" "shell" "toggle" "omarchy.clipboard"; }
+  Mod+Ctrl+A { spawn "omarchy-shell" "shell" "toggle" "omarchy.audio"; }
+  Mod+Alt+C { spawn "omarchy-menu" "toggle" "capture"; }
+  Mod+Ctrl+L hotkey-overlay-title="Lock" { spawn "omarchy-system-lock"; }
+  Mod+Ctrl+Shift+R { spawn "omarchy-restart-shell"; }
+  Ctrl+Alt+Delete { quit; }
+  Print { screenshot; }
+  Ctrl+Print { screenshot-screen; }
+  Alt+Print { screenshot-window; }
+  XF86AudioRaiseVolume allow-when-locked=true { spawn "omarchy-audio-output-volume" "raise"; }
+  XF86AudioLowerVolume allow-when-locked=true { spawn "omarchy-audio-output-volume" "lower"; }
+  XF86AudioMute allow-when-locked=true { spawn "omarchy-audio-output-volume" "mute-toggle"; }
+  XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }
+  XF86AudioNext allow-when-locked=true { spawn "playerctl" "next"; }
+  XF86AudioPrev allow-when-locked=true { spawn "playerctl" "previous"; }
+  XF86MonBrightnessUp allow-when-locked=true { spawn "omarchy-brightness-display" "+5%"; }
+  XF86MonBrightnessDown allow-when-locked=true { spawn "omarchy-brightness-display" "5%-"; }
+  Mod+Alt+Shift+F hotkey-overlay-title="File manager (cwd)" { spawn-sh "omarchy-launch-nautilus-cwd"; }
+  Mod+Shift+Alt+B hotkey-overlay-title="Browser (private)" { spawn-sh "omarchy-launch-browser --private"; }
+  Mod+Alt+Return hotkey-overlay-title="Tmux" { spawn-sh "omarchy-launch-terminal-tmux"; }
+  Mod+Ctrl+Return hotkey-overlay-title="Herdr" { spawn-sh "omarchy-launch-terminal-herdr"; }
+  Mod+Shift+M hotkey-overlay-title="Music" { spawn-sh "omarchy-launch-spotify"; }
+  Mod+Shift+Alt+M hotkey-overlay-title="Music TUI" { spawn-sh "omarchy-launch-tui cliamp"; }
+  Mod+Shift+D hotkey-overlay-title="Docker" { spawn-sh "omarchy-launch-tui omarchy-launch-docker-tui"; }
+  Mod+Shift+G hotkey-overlay-title="Signal" { spawn-sh "omarchy-launch-signal"; }
+  Mod+Shift+O hotkey-overlay-title="Obsidian" { spawn-sh "uwsm-app -- obsidian"; }
+  Mod+Shift+W hotkey-overlay-title="Omawrite" { spawn-sh "uwsm-app -- omawrite"; }
+  Mod+Shift+slash hotkey-overlay-title="Passwords" { spawn-sh "omarchy-launch-1password"; }
+  Mod+Shift+A hotkey-overlay-title="ChatGPT" { spawn-sh "omarchy-launch-webapp https://chatgpt.com"; }
+  Mod+Shift+Alt+A hotkey-overlay-title="Grok" { spawn-sh "omarchy-launch-webapp https://grok.com"; }
+  Mod+Shift+C hotkey-overlay-title="Calendar" { spawn-sh "omarchy-launch-webapp https://app.hey.com/calendar/weeks/"; }
+  Mod+Shift+E hotkey-overlay-title="Email" { spawn-sh "omarchy-launch-webapp https://app.hey.com"; }
+  Mod+Shift+Alt+E hotkey-overlay-title="New email" { spawn-sh "omarchy-launch-webapp 'https://app.hey.com/messages/new?display=standalone&new_window=true'"; }
+  Mod+Shift+Y hotkey-overlay-title="YouTube" { spawn-sh "omarchy-launch-webapp https://youtube.com/"; }
+  Mod+Shift+Alt+G hotkey-overlay-title="WhatsApp" { spawn-sh "omarchy-launch-webapp https://web.whatsapp.com/"; }
+  Mod+Shift+Ctrl+G hotkey-overlay-title="Google Messages" { spawn-sh "omarchy-launch-webapp https://messages.google.com/web/conversations"; }
+  Mod+Shift+P hotkey-overlay-title="Google Photos" { spawn-sh "omarchy-launch-webapp https://photos.google.com/"; }
+  Mod+Shift+S hotkey-overlay-title="Google Maps" { spawn-sh "omarchy-launch-webapp https://maps.google.com/"; }
+  Mod+Shift+X hotkey-overlay-title="X" { spawn-sh "omarchy-launch-webapp https://x.com/"; }
+  Mod+Shift+Alt+X hotkey-overlay-title="X Post" { spawn-sh "omarchy-launch-webapp https://x.com/compose/post"; }
+  XF86AudioMicMute allow-when-locked=true hotkey-overlay-title="Mute microphone" { spawn-sh "omarchy-audio-input-mute"; }
+  Shift+XF86MonBrightnessUp allow-when-locked=true hotkey-overlay-title="Brightness maximum" { spawn-sh "omarchy-brightness-display 100%"; }
+  Shift+XF86MonBrightnessDown allow-when-locked=true hotkey-overlay-title="Brightness minimum" { spawn-sh "omarchy-brightness-display 1%"; }
+  XF86KbdBrightnessUp allow-when-locked=true hotkey-overlay-title="Keyboard brightness up" { spawn-sh "omarchy-brightness-keyboard up"; }
+  XF86KbdBrightnessDown allow-when-locked=true hotkey-overlay-title="Keyboard brightness down" { spawn-sh "omarchy-brightness-keyboard down"; }
+  XF86KbdLightOnOff allow-when-locked=true hotkey-overlay-title="Keyboard backlight cycle" { spawn-sh "omarchy-brightness-keyboard cycle"; }
+  XF86TouchpadToggle allow-when-locked=true hotkey-overlay-title="Toggle touchpad" { spawn-sh "omarchy-toggle-touchpad"; }
+  XF86TouchpadOn allow-when-locked=true hotkey-overlay-title="Enable touchpad" { spawn-sh "omarchy-toggle-touchpad on"; }
+  XF86TouchpadOff allow-when-locked=true hotkey-overlay-title="Disable touchpad" { spawn-sh "omarchy-toggle-touchpad off"; }
+  Alt+XF86AudioRaiseVolume allow-when-locked=true hotkey-overlay-title="Volume up precise" { spawn-sh "omarchy-audio-output-volume +1"; }
+  Alt+XF86AudioLowerVolume allow-when-locked=true hotkey-overlay-title="Volume down precise" { spawn-sh "omarchy-audio-output-volume -1"; }
+  Alt+XF86MonBrightnessUp allow-when-locked=true hotkey-overlay-title="Brightness up precise" { spawn-sh "omarchy-brightness-display +1%"; }
+  Alt+XF86MonBrightnessDown allow-when-locked=true hotkey-overlay-title="Brightness down precise" { spawn-sh "omarchy-brightness-display 1%-"; }
+  Alt+XF86AudioPlay allow-when-locked=true hotkey-overlay-title="Next track" { spawn-sh "omarchy-shell media next"; }
+  XF86AudioPause allow-when-locked=true hotkey-overlay-title="Pause" { spawn-sh "omarchy-shell media playPause"; }
+  Alt+Shift+XF86AudioPlay allow-when-locked=true hotkey-overlay-title="Previous track" { spawn-sh "omarchy-shell media previous"; }
+  XF86Eject allow-when-locked=true hotkey-overlay-title="Eject media" { spawn-sh "eject"; }
+  Shift+XF86AudioMute allow-when-locked=true hotkey-overlay-title="Switch audio output" { spawn-sh "omarchy-audio-output-switch"; }
+  Shift+XF86AudioPause allow-when-locked=true hotkey-overlay-title="Switch media source" { spawn-sh "omarchy-audio-source-switch"; }
+  Shift+XF86AudioPlay allow-when-locked=true hotkey-overlay-title="Switch media source" { spawn-sh "omarchy-audio-source-switch"; }
+  Mod+Ctrl+E hotkey-overlay-title="Emojis" { spawn-sh "omarchy-shell shell toggle omarchy.emojis"; }
+  Mod+Ctrl+O hotkey-overlay-title="Toggle menu" { spawn-sh "omarchy-menu toggle toggle"; }
+  Mod+Ctrl+H hotkey-overlay-title="Hardware menu" { spawn-sh "omarchy-menu toggle hardware"; }
+  XF86PowerOff allow-when-locked=true hotkey-overlay-title="Power menu" { spawn-sh "omarchy-menu toggle system"; }
+  Mod+K hotkey-overlay-title="Keybindings" { spawn-sh "omarchy-menu-keybindings"; }
+  Mod+Alt+K hotkey-overlay-title="Tmux keybindings" { spawn-sh "omarchy-menu-tmux-keybindings"; }
+  Mod+Ctrl+K hotkey-overlay-title="Herdr keybindings" { spawn-sh "omarchy-menu-herdr-keybindings"; }
+  Mod+Ctrl+Q hotkey-overlay-title="Calculator" { spawn-sh "omacalc"; }
+  XF86Calculator hotkey-overlay-title="Calculator" { spawn-sh "omacalc"; }
+  Mod+Shift+Space hotkey-overlay-title="Toggle top bar" { spawn-sh "omarchy-toggle-bar"; }
+  Mod+Ctrl+Space hotkey-overlay-title="Background switcher" { spawn-sh "omarchy-menu toggle background"; }
+  Mod+Shift+Ctrl+Space hotkey-overlay-title="Theme menu" { spawn-sh "omarchy-menu toggle theme"; }
+  Mod+BackSpace hotkey-overlay-title="Toggle window transparency" { spawn-sh "omarchy-hyprland-window-transparency-toggle"; }
+  Mod+Shift+BackSpace hotkey-overlay-title="Toggle window gaps" { spawn-sh "omarchy-hyprland-window-gaps-toggle"; }
+  Mod+Ctrl+BackSpace hotkey-overlay-title="Toggle single-window square aspect" { spawn-sh "omarchy-hyprland-window-single-square-aspect-toggle"; }
+  Mod+Shift+comma hotkey-overlay-title="Dismiss all notifications" { spawn-sh "omarchy-shell notifications dismissAll"; }
+  Mod+Ctrl+comma hotkey-overlay-title="Toggle silencing notifications" { spawn-sh "omarchy-toggle-notification-silencing"; }
+  Mod+Alt+comma hotkey-overlay-title="Invoke last notification" { spawn-sh "omarchy-shell notifications invokeLast"; }
+  Mod+Shift+Alt+comma hotkey-overlay-title="Open notification history" { spawn-sh "omarchy-shell notifications showHistory"; }
+  Mod+Ctrl+I hotkey-overlay-title="Toggle locking on idle" { spawn-sh "omarchy-toggle-idle"; }
+  Mod+Ctrl+N hotkey-overlay-title="Toggle nightlight" { spawn-sh "omarchy-toggle-nightlight"; }
+  Mod+Ctrl+Delete hotkey-overlay-title="Toggle laptop display" { spawn-sh "omarchy-hyprland-monitor-internal toggle"; }
+  Mod+Ctrl+Alt+Delete hotkey-overlay-title="Toggle laptop display mirroring" { spawn-sh "omarchy-hyprland-monitor-internal-mirror toggle"; }
+  Mod+Print hotkey-overlay-title="Color picker" { spawn-sh "pkill hyprpicker || hyprpicker -a"; }
+  Mod+Ctrl+Print hotkey-overlay-title="Extract text (OCR) from screenshot" { spawn-sh "omarchy-capture-text"; }
+  Mod+Ctrl+S hotkey-overlay-title="Share" { spawn-sh "omarchy-menu toggle share"; }
+  Mod+Ctrl+period hotkey-overlay-title="Transcode" { spawn-sh "omarchy-transcode"; }
+  Mod+Ctrl+Alt+R hotkey-overlay-title="Show reminders" { spawn-sh "omarchy-reminder show"; }
+  Mod+Ctrl+Alt+T hotkey-overlay-title="Show time" { spawn-sh "omarchy-notification-time"; }
+  Mod+Ctrl+Alt+B hotkey-overlay-title="Show battery remaining" { spawn-sh "omarchy-notification-battery"; }
+  Mod+Ctrl+Alt+W hotkey-overlay-title="Toggle weather" { spawn-sh "omarchy-notification-weather"; }
+  Mod+Shift+Ctrl+A hotkey-overlay-title="Agent" { spawn-sh "omarchy-agent --pick"; }
+  Mod+Ctrl+B hotkey-overlay-title="Bluetooth" { spawn-sh "omarchy-shell shell toggle omarchy.bluetooth"; }
+  Mod+Ctrl+D hotkey-overlay-title="Display" { spawn-sh "omarchy-shell shell toggle omarchy.monitor"; }
+  Mod+Ctrl+Alt+D hotkey-overlay-title="Calendar" { spawn-sh "omarchy-shell shell toggle omarchy.clock"; }
+  Mod+Ctrl+W hotkey-overlay-title="Network" { spawn-sh "omarchy-shell shell toggle omarchy.network"; }
+  Mod+Ctrl+P hotkey-overlay-title="Power" { spawn-sh "omarchy-shell shell toggle omarchy.power"; }
+  Mod+Ctrl+T hotkey-overlay-title="Activity" { spawn-sh "omarchy-launch-tui btop"; }
+}
+
+switch-events {
+  lid-close { spawn "omarchy-system-lid-close"; }
+  lid-open { spawn "omarchy-niri" "clamshell" "open"; }
+}
+window-rule {
+  match app-id=r#"^WebcamOverlay-"#
+  open-floating true
+  default-floating-position x=20 y=20 relative-to="bottom-right"
+}
+
+
+
+window-rule { opacity 0.98; }

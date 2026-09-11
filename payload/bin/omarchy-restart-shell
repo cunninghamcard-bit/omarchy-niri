@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# omarchy:summary=Restart the Omarchy shell
+# omarchy:examples=omarchy restart shell
+
+# Theme changes and manual restarts can overlap. Serialize the entire stop/start
+# cycle so a second caller cannot kill a shell while its plugins are loading.
+exec {restart_lock}>"$XDG_RUNTIME_DIR/omarchy-shell-restart.lock"
+flock "$restart_lock"
+
+# A caller opened after dev link/unlink may disagree with the still-running
+# desktop. The user manager receives the compositor environment at session start.
+session_omarchy_path=$(systemctl --user show-environment 2>/dev/null | sed -n 's/^OMARCHY_PATH=//p' | tail -n 1)
+: "${session_omarchy_path:=$OMARCHY_PATH}"
+
+CONFIG_DIR="$session_omarchy_path/shell"
+[[ -f $CONFIG_DIR/shell.qml ]] || { echo "Omarchy shell config not found: $CONFIG_DIR" >&2; exit 1; }
+
+# SSH callers inherit the canonical session variables from the user manager.
+while IFS='=' read -r name value; do
+case $name in
+  NIRI_SOCKET|WAYLAND_DISPLAY|DISPLAY|XDG_CURRENT_DESKTOP) export "$name=$value" ;;
+esac
+done < <(systemctl --user show-environment)
+locking=$(OMARCHY_PATH="$session_omarchy_path" omarchy-shell lock status 2>/dev/null | jq -r '.secure or .requested')
+if [[ $locking == "true" ]]; then
+  echo "Refusing to restart Omarchy shell while the session is locked." >&2
+  exit 1
+fi
+relock=0
+OMARCHY_PATH="$session_omarchy_path" omarchy-niri lock-status
+lock_status=$?
+case $lock_status in
+  0) relock=1 ;;
+  1) ;;
+  *) echo "Cannot determine Niri lock recovery state; leaving the shell running." >&2; exit 1 ;;
+esac
+while timeout 5 quickshell kill -p "$CONFIG_DIR" --any-display >/dev/null 2>&1; do :; done
+systemd-run --user --collect --unit="omarchy-shell-restart-$$" "$session_omarchy_path/bin/omarchy-launch-shell" >/dev/null
+for (( attempt = 0; attempt < 100; attempt++ )); do
+  if OMARCHY_PATH="$session_omarchy_path" omarchy-shell shell ping >/dev/null 2>&1; then
+    if (( ! relock )); then
+      OMARCHY_PATH="$session_omarchy_path" omarchy-shell lock status >/dev/null 2>&1 && exit 0
+    fi
+    state=$(OMARCHY_PATH="$session_omarchy_path" omarchy-shell lock status 2>/dev/null | jq -r '.secure')
+    [[ $state == "true" ]] && exit 0
+    OMARCHY_PATH="$session_omarchy_path" omarchy-shell lock lock >/dev/null 2>&1 || true
+  fi
+  sleep 0.2
+done
+echo "Omarchy shell did not become ready after restart." >&2
+exit 1

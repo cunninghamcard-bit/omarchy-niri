@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# omarchy:summary=Launch the fastfetch TUI that gives information about the current system.
+
+# The size that hugs the About content depends on the terminal font and the user's
+# logo, so it can only be measured from inside the terminal. We remember the size
+# that fit and apply it as a window rule before launching, so the window opens at
+# it instead of resizing after the first paint. Bash defers WINCH traps while read
+# blocks, so poll for size changes and re-render fastfetch whenever it is resized.
+
+LOGO_FILE="$HOME/.config/omarchy/branding/about.txt"
+FIT_FILE="$HOME/.local/state/omarchy/windows/about.fit"
+
+# A user-level fastfetch config can relocate or restyle the logo in ways this
+# measurement cannot see, so leave sizing to the float rule in that case.
+custom_fastfetch_config() {
+  [[ -f $HOME/.config/fastfetch/config.jsonc ]]
+}
+
+# wc -L counts display columns only in a UTF-8 locale. A session that never set
+# one counts every box-drawing and Nerd Font glyph in the About layout as
+# nothing, which measures the content narrower than it renders.
+display_columns() {
+  LC_ALL=C.UTF-8 wc -L
+}
+
+logo_dimensions() {
+  [[ -f $LOGO_FILE ]] || return 1
+  printf '%s %s' "$(display_columns <"$LOGO_FILE")" "$(wc -l <"$LOGO_FILE")"
+}
+
+presize_window() { :; }
+
+# The terminal reflows during a resize, so
+# wait for the grid to hold still before measuring it.
+settle_grid() {
+  local current previous="" held=0
+
+  for _ in {1..20}; do
+    current=$(stty size)
+    if [[ $current == $previous ]]; then
+      (( ++held == 3 )) && break
+    else
+      held=0
+      previous=$current
+    fi
+    sleep 0.05
+  done
+}
+
+fit_window() { return 0; }
+
+if [[ ${1:-} == "--render" ]]; then
+  printf '\e[?25l'
+
+  # Give the compositor a moment to apply the window rules before measuring cells.
+  settle_grid
+
+  fitted=false
+  passes=0
+  while :; do
+    size=$(stty size)
+    logo_stamp=$(stat -c %Y "$LOGO_FILE" 2>/dev/null)
+    clear
+    fastfetch
+    # A second pass picks up a fit that could not measure the window the first
+    # time. Beyond that, a window that will not settle would be fitted again on
+    # every repaint.
+    if [[ $fitted == false ]] && (( ++passes <= 2 )); then
+      fit_window && fitted=true
+    fi
+    while [[ $(stty size) == $size && $(stat -c %Y "$LOGO_FILE" 2>/dev/null) == $logo_stamp ]]; do
+      read -t 0.5 -n 1 -s && exit
+      (( $? > 128 )) || exit
+    done
+    # A rebranded logo changes the content dimensions, so measure again.
+    if [[ $(stat -c %Y "$LOGO_FILE" 2>/dev/null) != $logo_stamp ]]; then
+      fitted=false
+      passes=0
+    fi
+  done
+fi
+
+presize_window
+exec omarchy-launch-or-focus-tui --app-id=org.omarchy.about omarchy-launch-about --render

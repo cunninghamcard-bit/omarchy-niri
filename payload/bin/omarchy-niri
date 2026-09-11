@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Provide Niri session integration for the Omarchy shell
+# omarchy:hidden=true
+
+exec python3 "$OMARCHY_PATH/default/niri/bridge.py" "$@"

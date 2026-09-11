@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Resize and place the Niri webcam overlay
+# omarchy:args=<small|medium|large>
+
+exec omarchy-niri webcam "${1:-medium}"

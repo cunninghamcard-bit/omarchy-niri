@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Check for an active external display
+# omarchy:hidden=true
+
+niri msg --json outputs | jq -e 'any(.[]; (.logical != null) and (.name | test("^(eDP|LVDS|DSI)-") | not))' >/dev/null

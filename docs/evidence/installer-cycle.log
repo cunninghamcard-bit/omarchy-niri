@@ -1,0 +1,24 @@
+Original session restored. Reboot. Packages retained; backups and subsequent edits saved at /var/lib/omarchy-niri-uninstalled-1789118951440883970
+export OMARCHY_PATH="/usr/share/omarchy"
+Exec=uwsm start -g -1 -e -D Hyprland hyprland.desktop
+PASS: uninstall restores original session; all packaged source hashes unchanged
+2026-09-11T09:29:11.980711Z DEBUG niri_config: loaded config from "/var/lib/omarchy-niri/generations/1789118951618187512/default/niri/config.kdl"
+2026-09-11T09:29:11.981540Z  INFO niri: config is valid
+2026-09-11T09:29:12.613038Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-outputs.kdl"
+2026-09-11T09:29:12.613670Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-input.kdl"
+2026-09-11T09:29:12.614086Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-flags.kdl"
+2026-09-11T09:29:12.614909Z DEBUG niri_config: loaded config from "/home/aa/.config/niri/config.kdl"
+2026-09-11T09:29:12.615385Z  INFO niri: config is valid
+/tmp/tmpha6on7q6: parsed OK
+Installed. Log out and select Omarchy (Niri), or reboot. Restore: sudo omarchy-niri-extension uninstall
+7129 niri --session
+7184 niri msg --json event-stream
+Running as unit: run-p7360-i5911.service; invocation ID: 81b6542c06ef4f69a783045715653436
+ok
+{"Virtual-1":{"name":"Virtual-1","make":"Red Hat, Inc.","model":"QEMU Monitor","serial":null,"physical_size":[90,60],"modes":[{"width":816,"height":510,"refresh_rate":59994,"is_preferred":true},{"width":5120,"height":2160,"refresh_rate":50000,"is_preferred":false},{"width":4096,"height":2160,"refresh_rate":50000,"is_preferred":false},{"width":3840,"height":2160,"refresh_rate":60000,"is_preferred":false},{"width":3840,"height":2160,"refresh_rate":59940,"is_preferred":false},{"width":3840,"height":2160,"refresh_rate":50000,"is_preferred":false},{"width":1920,"height":1440,"refresh_rate":60000,"is_preferred":false},{"width":2560,"height":1080,"refresh_rate":50000,"is_preferred":false},{"width":1856,"height":1392,"refresh_rate":59995,"is_preferred":false},{"width":1792,"height":1344,"refresh_rate":60000,"is_preferred":false},{"width":2048,"height":1152,"refresh_rate":60000,"is_preferred":false},{"width":1920,"height":1200,"refresh_rate":59885,"is_preferred":false},{"width":1920,"height":1080,"refresh_rate":60000,"is_preferred":false},{"width":1920,"height":1080,"refresh_rate":50000,"is_preferred":false},{"width":1600,"height":1200,"refresh_rate":60000,"is_preferred":false},{"width":1680,"height":1050,"refresh_rate":59954,"is_preferred":false},{"width":1400,"height":1050,"refresh_rate":59978,"is_preferred":false},{"width":1280,"height":1024,"refresh_rate":60020,"is_preferred":false},{"width":1440,"height":900,"refresh_rate":59887,"is_preferred":false},{"width":1280,"height":960,"refresh_rate":60000,"is_preferred":false},{"width":1360,"height":768,"refresh_rate":60015,"is_preferred":false},{"width":1280,"height":768,"refresh_rate":59870,"is_preferred":false},{"width":1024,"height":768,"refresh_rate":60004,"is_preferred":false},{"width":800,"height":600,"refresh_rate":60317,"is_preferred":false},{"width":640,"height":480,"refresh_rate":60000,"is_preferred":false},{"width":640,"height":480,"refresh_rate":59940,"is_preferred":false}],"current_mode":0,"is_custom_mode":false,"vrr_supported":false,"vrr_enabled":false,"logical":{"x":0,"y":0,"width":816,"height":510,"scale":1.0,"transform":"Normal"}}}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 1.635s
+             CPU time consumed: 143ms
+                   Memory peak: 7.4M (swap: 0B)
+PASS: clean reinstall for original desktop account and Niri login

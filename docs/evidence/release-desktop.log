@@ -1,0 +1,43 @@
+Running as unit: run-p12924-i7247.service
+PASS: half-width empty space, scroll/focus, centering, resize, floating, workspace move, application focus
+[{"id": 3, "title": "Niri QA 1", "app_id": "niri-qa-1", "pid": 13209, "workspace_id": 1, "is_focused": true, "is_floating": false, "is_urgent": false, "layout": {"pos_in_scrolling_layout": [1, 1], "tile_size": [393.0, 464.0], "window_size": [389, 460], "tile_pos_in_workspace_view": null, "window_offset_in_tile": [2.0, 2.0]}, "focus_timestamp": {"secs": 2442, "nanos": 27849830}}, {"id": 4, "title": "Niri QA 2", "app_id": "niri-qa-2", "pid": 13226, "workspace_id": 1, "is_focused": false, "is_floating": false, "is_urgent": false, "layout": {"pos_in_scrolling_layout": [2, 1], "tile_size": [393.0, 464.0], "window_size": [389, 460], "tile_pos_in_workspace_view": null, "window_offset_in_tile": [2.0, 2.0]}, "focus_timestamp": {"secs": 2442, "nanos": 233664289}}, {"id": 2, "title": "Niri QA 0", "app_id": "niri-qa-0", "pid": 12948, "workspace_id": 2, "is_focused": false, "is_floating": false, "is_urgent": false, "layout": {"pos_in_scrolling_layout": [1, 1], "tile_size": [312.0, 464.0], "window_size": [308, 460], "tile_pos_in_workspace_view": null, "window_offset_in_tile": [2.0, 2.0]}, "focus_timestamp": {"secs": 2438, "nanos": 733156079}}]
+ok
+2026-09-11T09:44:48.348463Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-outputs.kdl"
+2026-09-11T09:44:48.349374Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-input.kdl"
+2026-09-11T09:44:48.349924Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-flags.kdl"
+2026-09-11T09:44:48.351292Z DEBUG niri_config: loaded config from "/home/aa/.config/niri/config.kdl"
+2026-09-11T09:44:48.351963Z  INFO niri: config is valid
+PASS: full theme switch updates Niri border colors and preserves running shell
+{"brightness":0,"brightnessAvailable":false,"focusedMonitor":"Virtual-1","scale":"1","displays":[{"name":"Virtual-1","enabled":true,"focused":true,"width":816,"height":510}]}
+PASS: webcam overlay geometry and smaller/larger commands (synthetic window)
+{
+    "programs": [
+
+    ],
+    "stream_groups": [
+
+    ],
+    "streams": [
+        {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 816,
+            "height": 510
+        },
+        {
+            "codec_name": "aac",
+            "codec_type": "audio"
+        }
+    ],
+    "format": {
+        "duration": "2.240000"
+    }
+}
+ok
+ok
+PASS: final installed generation desktop and recorder
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 20.909s
+             CPU time consumed: 22.461s
+                   Memory peak: 250.3M (swap: 0B)

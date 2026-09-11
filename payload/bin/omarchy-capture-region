@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# omarchy:summary=Select a screen region on Niri
+# omarchy:args=[smart|region|windows|fullscreen] [--match-monitor]
+
+set -euo pipefail
+mode=${1:-smart}
+[[ $# == 0 ]] || shift
+match_monitor=false
+for option in "$@"; do
+  case $option in
+    --match-monitor) match_monitor=true ;;
+    *) echo "Unsupported Niri capture option: $option" >&2; exit 2 ;;
+  esac
+done
+case $mode in
+  fullscreen)
+    niri msg --json focused-output | jq -r '.logical | "\(.x),\(.y) \(.width)x\(.height)"'
+    ;;
+  smart|region|windows)
+    selection=$(slurp) || exit 1
+    if [[ $match_monitor == true ]]; then
+      output=$(niri msg --json outputs | jq -r --arg region "$selection" '.[] | select(.logical != null) | select((.logical | "\(.x),\(.y) \(.width)x\(.height)") == $region) | .name' | head -n1)
+      if [[ -n $output ]]; then echo "monitor:$output"; exit 0; fi
+    fi
+    echo "$selection"
+    ;;
+  *) echo "Unknown selection mode: $mode" >&2; exit 2 ;;
+esac

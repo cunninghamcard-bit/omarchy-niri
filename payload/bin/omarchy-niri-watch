@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# omarchy:summary=Reconcile docked displays after Niri output changes
+# omarchy:hidden=true
+
+# Output changes affect workspace assignments; the event stream avoids polling.
+niri msg --json event-stream | while IFS= read -r event; do
+  if [[ $event == *'"WorkspacesChanged"'* ]]; then
+    omarchy-niri clamshell
+  fi
+done

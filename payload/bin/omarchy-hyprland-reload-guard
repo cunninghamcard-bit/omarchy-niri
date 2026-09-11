@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Niri reloads its configuration atomically
+# omarchy:hidden=true
+
+exit 0

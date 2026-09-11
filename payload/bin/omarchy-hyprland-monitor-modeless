@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Check whether displays are all disconnected
+# omarchy:hidden=true
+
+niri msg --json outputs | jq -e 'length == 0' >/dev/null

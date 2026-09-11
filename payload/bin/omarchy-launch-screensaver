@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# omarchy:summary=Launch the Omarchy screensaver in the default terminal on the system with the correct font configuration.
+
+if omarchy-cmd-missing ttfx; then
+  exit 1
+fi
+
+# Exit early if screensaver is already running
+pgrep -f '[o]rg.omarchy.screensaver' && exit 0
+
+# Allow screensaver to be turned off but also force started
+if omarchy-toggle-enabled screensaver-off && [[ $1 != "force" ]]; then
+  exit 1
+fi
+
+terminal=$(xdg-terminal-exec --print-id)
+
+case $terminal in
+*Alacritty* | *ghostty* | *foot* | *kitty*) ;;
+*)
+  omarchy-notification-send -g ✋ "Screensaver only runs in Alacritty, Foot, Ghostty, or Kitty"
+  exit 1
+  ;;
+esac
+
+launch_screensaver() {
+  case $terminal in
+  *Alacritty*)
+    "$@" alacritty --class=org.omarchy.screensaver --config-file "$OMARCHY_PATH/default/alacritty/screensaver.toml" -e omarchy-screensaver
+    ;;
+  *ghostty*)
+    "$@" ghostty --class=org.omarchy.screensaver --config-file="$OMARCHY_PATH/default/ghostty/screensaver" --font-size=18 -e omarchy-screensaver
+    ;;
+  *foot*)
+    "$@" foot --app-id=org.omarchy.screensaver --config="$OMARCHY_PATH/default/foot/screensaver.ini" -e omarchy-screensaver
+    ;;
+  *kitty*)
+    "$@" kitty --class=org.omarchy.screensaver --override font_size=18 --override window_padding_width=0 -e omarchy-screensaver
+    ;;
+  esac
+}
+
+# Assign each new terminal by window ID, so asynchronous startup cannot pile
+# every screensaver onto the output that happens to be focused last.
+seen=$(niri msg --json windows | jq '[.[].id]')
+while IFS= read -r output; do
+  launch_screensaver uwsm-app -- &
+  deadline=$((SECONDS + 5))
+  window=""
+  while (( SECONDS < deadline )); do
+    window=$(niri msg --json windows | jq -r --argjson seen "$seen" '.[] | select(.app_id == "org.omarchy.screensaver") | select(.id as $id | $seen | index($id) | not) | .id' | head -n1)
+    [[ -n $window ]] && break
+    sleep 0.05
+  done
+  [[ -n $window ]] || continue
+  niri msg action move-window-to-monitor --id "$window" "$output" >/dev/null
+  seen=$(jq -c --argjson id "$window" '. + [$id]' <<<"$seen")
+done < <(niri msg --json outputs | jq -r '.[] | select(.logical != null) | .name')
+wait

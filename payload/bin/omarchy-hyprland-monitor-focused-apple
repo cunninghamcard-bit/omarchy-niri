@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Check the focused display manufacturer
+# omarchy:hidden=true
+
+niri msg --json focused-output | jq -e '.make | test("Apple"; "i")' >/dev/null

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Show Niri window and application shortcuts
+# omarchy:hidden=true
+
+exec niri msg action show-hotkey-overlay

@@ -1,0 +1,539 @@
+{
+  "name": "omarchy-niri",
+  "version": "0.1.0",
+  "base": "omacom/omarchy",
+  "baseVersion": "4.0.2",
+  "baseCommit": "346e69e1cec6c4e8924531874af6ba010a1bc99e",
+  "niriMinimum": "26.04",
+  "keybindingsSource": "2725244134/dotfiles",
+  "keybindingsCommit": "4a96e1e36f4e19fd8d24d04ace95fa832a01c16e",
+  "windowManagementBindings": 69,
+  "format": "managed replacement layer (not an Omarchy shell plugin manifest)",
+  "files": {
+    "bin/omarchy-bar-text-color": {
+      "baseSha256": [
+        "9c43f79b0a9652978d3ae75c22c386acfc99e65f5873c3168ac7dd35f5ec2cc7"
+      ],
+      "sha256": "fcffc47d8b451a30c48d0bf72c1e3c5335ded738174c6aa19fce1c60ce71ed74"
+    },
+    "bin/omarchy-brightness-display": {
+      "baseSha256": [
+        "587908cfeb5c99fa7746fd4616eeef593ba278de0e153dc77918caa72bd18930"
+      ],
+      "sha256": "8ab910de0539ed05963f52d0c1eae09667e9e765a62105568eeb62e6bdb549c2"
+    },
+    "bin/omarchy-capture-region": {
+      "baseSha256": [
+        "aab486332834bbba5f880afd821c8fb4888e02bd0c95b1bf1265f8b741dfe25b"
+      ],
+      "sha256": "16258bfcf53b782b317d7f606877333549edd16ada18947f0186d82de11436e8"
+    },
+    "bin/omarchy-capture-screenrecording": {
+      "baseSha256": [
+        "6d70541c44a82fde5a44d712f348df35f8372c080436433916694738627c4c66"
+      ],
+      "sha256": "33edd44aa3f31766b0d510e894f9213f3dd70a314f60132cac009735330789c7"
+    },
+    "bin/omarchy-capture-screenshot": {
+      "baseSha256": [
+        "8c6200090912a6dc0f397de90bc6898960308cbc498ff5e8599e62c21e3075c5"
+      ],
+      "sha256": "5f9f748cfdc2aaf6a9f20e85f1aae52016724f0512fa2b1ef79b2b50715ec716"
+    },
+    "bin/omarchy-capture-webcam-resize": {
+      "baseSha256": [
+        "3eb9ad8e6e5a063113598022d66f793fb6232ad297e120f7da61fc150ebe3214"
+      ],
+      "sha256": "e65c9b67efa51c0f525ba85992fbd7143509bd7b238e9c71ac9620a6eabda3e1"
+    },
+    "bin/omarchy-cmd-terminal-cwd": {
+      "baseSha256": [
+        "64ef9d88a1e462f2e44522d1e0c9c436537237de92b360892c9d4ed1e4521f0f"
+      ],
+      "sha256": "f5761439cb95dd331aed5612e861f69cfa7fddcc6b57c29e2a7f668f88ffa79f"
+    },
+    "bin/omarchy-debug-idle": {
+      "baseSha256": [
+        "20a9f7e1940ca97775b014ffede5707992b3ce57adf6edabc482ca6c81cccffd"
+      ],
+      "sha256": "3f4860f15b0459e8b88149dd1630966d6f31441911420cb9055ca3ed5d04bbb9"
+    },
+    "bin/omarchy-focus-app": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "5213a7c90fca837864a23896e93830100881a59eef86f2dd2e5f094e744e6821"
+    },
+    "bin/omarchy-hw-touchpad": {
+      "baseSha256": [
+        "22077cc0f53d9aaf82ed3ddcc58ee800d6776569210e2c180fcbff0d826372b0"
+      ],
+      "sha256": "3a1ea4f053e0773e7cf8877860ed54acc8250715b837bd3c40af23c82b604c38"
+    },
+    "bin/omarchy-hw-touchscreen": {
+      "baseSha256": [
+        "25e96367bcc000a8a51e9fc28d498cfbe552708f65481d2c89f79c621b5cafb7"
+      ],
+      "sha256": "18f9d7dc3d30102b69cfe0ea8c11bb7b45c93c652ed94d66d5875683e4283a03"
+    },
+    "bin/omarchy-hyprland-focus-app": {
+      "baseSha256": [
+        "391d3f4d6b9e791265e1a64031e5a96f18bde29577fa9f09640f51c5c8c20c2c"
+      ],
+      "sha256": "5213a7c90fca837864a23896e93830100881a59eef86f2dd2e5f094e744e6821"
+    },
+    "bin/omarchy-hyprland-monitor-clamshell": {
+      "baseSha256": [
+        "00f1caf1b1be2794a4dc4405cce5758afbbaeba7d3e21eae0af344d4f05b65b7"
+      ],
+      "sha256": "b357f8e8aa1e2203ae2e2dee567a97c8fb4f6c7b024b07316c57a3348c46dec1"
+    },
+    "bin/omarchy-hyprland-monitor-external-active": {
+      "baseSha256": [
+        "3ccc2ec167eff8122163cd809393527c5491b925195b08e075381b389b946456"
+      ],
+      "sha256": "9f18b78dece40ff022b4cb820dc4ef2e8cd2ce32f1ddd455d2c0ca7b7ad8a7bb"
+    },
+    "bin/omarchy-hyprland-monitor-focused": {
+      "baseSha256": [
+        "c3f4e85b13ca93d09af97ee8470a8b45f69293ef6d6d3acf07ff13a77e158d26"
+      ],
+      "sha256": "59009990fad0f29d81507a6e7823ca9bf75c1c1498284a58507368361f29a04c"
+    },
+    "bin/omarchy-hyprland-monitor-focused-apple": {
+      "baseSha256": [
+        "7d513a2b931b2e806f916ba9fca22e5b094725bb2e915979ada28d078c561810"
+      ],
+      "sha256": "3710aaa711fb80a6de09a4267c63c066ee861673a919f6fd43942cb4a0c195f1"
+    },
+    "bin/omarchy-hyprland-monitor-internal": {
+      "baseSha256": [
+        "0fba8795295803be87bea919ba4c92f35ecb60b65d4a4880d675a9d7f9d3efad"
+      ],
+      "sha256": "4d724f7d44d6f20b4c1386ae110e55d06e8f5628b402430ab836ba74189c71f3"
+    },
+    "bin/omarchy-hyprland-monitor-internal-mirror": {
+      "baseSha256": [
+        "d32f6e08fa03d7b1adf1e36e1e3ff9ff366be82707c4d845fbea5e52524911bf"
+      ],
+      "sha256": "9e73d0e594053d2778bb337835a3b993a1105cd5cb47aadbced9411717fc33e6"
+    },
+    "bin/omarchy-hyprland-monitor-laptop": {
+      "baseSha256": [
+        "ba4cab25f4c3a6cb400a2e2efeace5374891a71c553218b126fe4ce5ad871397"
+      ],
+      "sha256": "a189a9e406f9374beb45a17453558e1eb76d5ebe685f588d4e91becf02406a00"
+    },
+    "bin/omarchy-hyprland-monitor-modeless": {
+      "baseSha256": [
+        "81e5c83170ebc87a1e6af2974168c3e463a6fba096023dfc85164101089577d8"
+      ],
+      "sha256": "099b09c537bc2b943ce9035a3f537227e5149c34f931ab2263cf29263d98684b"
+    },
+    "bin/omarchy-hyprland-monitor-scaling": {
+      "baseSha256": [
+        "6ef14d1224da38f7a9a4780e2b1c7d049411248082f4617004f44d85273fc4b9"
+      ],
+      "sha256": "e52f257ccb9ab1f5bece27e28c0c7c25aebfc441e9c4778fbff0791f0adee03f"
+    },
+    "bin/omarchy-hyprland-monitor-watch": {
+      "baseSha256": [
+        "124c14fbc0285cf195e529d7cdee6f90baeec2c9a1421f9b9a3cec933024eced"
+      ],
+      "sha256": "d960a6643eb3fc2997b6affd45e671099085f0b813beb472c08bfa5ebc0edccd"
+    },
+    "bin/omarchy-hyprland-reload-guard": {
+      "baseSha256": [
+        "d2f830bf0dc0d27b275524f98748dee9363dcb5d12182fd9d82a5988aece35fe"
+      ],
+      "sha256": "0298be2191508f2ac90d43ac76c4439530f731079524b4c6f3cece7d07f3b346"
+    },
+    "bin/omarchy-hyprland-session-locked": {
+      "baseSha256": [
+        "e5004580e41475932f852d622b36ec07bfb0e98633c4d3c3055071a54d0eda07"
+      ],
+      "sha256": "b9748fbd86b1877ed09c5c23b93d6b720bda0bb37b284df1039cffb5e30b98d5"
+    },
+    "bin/omarchy-hyprland-toggle": {
+      "baseSha256": [
+        "32a6ea6bef5529f26f0c0ab836380e1f1ba48b6fb2cbcbea5d0a1a46d37f4f7a"
+      ],
+      "sha256": "a776f181dab268873a6decc81e4a6f3033c4a5187a1957f77a708be2e13aa4d3"
+    },
+    "bin/omarchy-hyprland-window-close-all": {
+      "baseSha256": [
+        "697c225a76e61b5312e7d9eb349f01a6f15b6b3493614031ad873cb5fbf5c7d5"
+      ],
+      "sha256": "66fcd1c8d2c0ca818d4c59a1e30fa2f5eeb8b1f1b973916e32969b7d53f6160a"
+    },
+    "bin/omarchy-hyprland-window-pop": {
+      "baseSha256": [
+        "b5dfad94e9d874f244f778b56ab704ba41c7177fe375ca395d09016ea62f9628"
+      ],
+      "sha256": "7d1e55175f581b7a7ccd02927f1388c17472220415d5ce8840f93242d0d7bf86"
+    },
+    "bin/omarchy-hyprland-window-tiled-fullscreen-toggle": {
+      "baseSha256": [
+        "b5bf5e5eab1e220b58b7c5aae0c246141b2d80837d28fdadbd47899f909285d2"
+      ],
+      "sha256": "8d9ac5860a896f006837d4906035a678cf0905c6f06f26f28e7ad7cecb29d0eb"
+    },
+    "bin/omarchy-hyprland-window-transparency-toggle": {
+      "baseSha256": [
+        "ae950ccf958b9a3f89d2743408b0f64166f5e23a471388033c17f149a9c60216"
+      ],
+      "sha256": "3a31b2ab24392716f8c8b008fe35e2c1fde1329e2af05aec632942d5c658d879"
+    },
+    "bin/omarchy-hyprland-window-width": {
+      "baseSha256": [
+        "c91911eaea1eaa25674541adb4b3e8faddd7d06b8301ff31ebe232d49de5dc77"
+      ],
+      "sha256": "98896c546ba1c825110d0457cda8d0dca605074f0dae46cdfed3c837a8859d00"
+    },
+    "bin/omarchy-hyprland-workspace-layout-toggle": {
+      "baseSha256": [
+        "0e35529ed0391c2a990f5cca02a4a08a6edf471ba65aa1b65c53c3eb1f28244c"
+      ],
+      "sha256": "8b180c2518f6886819dacaba32d55be1d5db1168c595055854255b3877017414"
+    },
+    "bin/omarchy-install-preinstalls": {
+      "baseSha256": [
+        "c3e95082fccb8cbee3a45c3f0895247e208a5d1fa64fe3b6cba4e793ce672dc5"
+      ],
+      "sha256": "fffaf66c8699eaad317cbc31405c4163b13d166562f6ca7be12393651d1790ea"
+    },
+    "bin/omarchy-launch-about": {
+      "baseSha256": [
+        "2b6e6902737ef43bd731e5c7dd026d96b72d52b6e20904323c3092d509ed3fca"
+      ],
+      "sha256": "a613e07dfba7d1895a49dc69d5a1157cd707207c3484d13d63482f342861715c"
+    },
+    "bin/omarchy-launch-browser": {
+      "baseSha256": [
+        "de8efae516c25f3cc39ddaf0414f2cd6c20112a29e87b3a091513990f52c0e8f"
+      ],
+      "sha256": "02bb04e93067e47828348013e5410fe65e6efd93fa91c2f423f0c2da142b68cc"
+    },
+    "bin/omarchy-launch-or-focus": {
+      "baseSha256": [
+        "930a0d12ab270c6a5e55790f305230ef0f41602292320c01cba6978669a2a898"
+      ],
+      "sha256": "faae3fc6bf9e22b74c3cf633bf9774721bf0dbf8f4f321d674fdcb72c9b35e31"
+    },
+    "bin/omarchy-launch-screensaver": {
+      "baseSha256": [
+        "b58b82a6b9edc901c83da50a3e2b2ac7fee8d1311a7f327a9ec8901ff8028338"
+      ],
+      "sha256": "b5357f90f76606bbb4bc79bcc533e64f0e3fce93fdd622cb9e5b0cbd81364afa"
+    },
+    "bin/omarchy-launch-shell": {
+      "baseSha256": [
+        "484f3af00ee3d13b8f4e33b118d9b7355c72d254a631fc740a160f5f1d140cff"
+      ],
+      "sha256": "12c6bbbf3723d00140a08c358e8c93a873a9a99d5bf93a69061d0b9fc53c144c"
+    },
+    "bin/omarchy-launch-signal": {
+      "baseSha256": [
+        "78a0a2a5c27024023591b6d1ffc34f2fee78816b2a7535eac0e69dc79849efd9"
+      ],
+      "sha256": "0688acfb44471bbeee8988e9bbfabcf4a89be23eed4f7b3362de13ae5acb83ea"
+    },
+    "bin/omarchy-launch-spotify": {
+      "baseSha256": [
+        "588347776795ab020e4c3814eb7e79ab438ffdce828ed4f9f0a9d8fd17c7d1e3"
+      ],
+      "sha256": "6e9b51d0535a290a40fe2c88c0dddd33d8bdb5293741478add0c0ade67aeb0c6"
+    },
+    "bin/omarchy-menu-herdr-keybindings": {
+      "baseSha256": [
+        "13eb04d29aacb52186be0a76adcfbe11016ac326028c25557152c723762ebb53"
+      ],
+      "sha256": "48dfd791cf3ecb393830a00305b01893eb6f99403bd4f4022afe24286392c59d"
+    },
+    "bin/omarchy-menu-keybindings": {
+      "baseSha256": [
+        "8f183f9b4ae5b73b2b25568b5b35ee4f5b4fdc1d345b207dc53c8a35938a5bbf"
+      ],
+      "sha256": "2cd4a0561bea8cab7ea778c9f04c6d7eccd546796ee785938f701a7fa1ecfc2a"
+    },
+    "bin/omarchy-menu-tmux-keybindings": {
+      "baseSha256": [
+        "298060c0ac4283e1223d06ccd2772f7d1396d2dce6990afdbfa4108a13e8d0c1"
+      ],
+      "sha256": "45b47bdd943f90871d55fd5f9940c0503f3a30777dd3f04ad32e10483c863158"
+    },
+    "bin/omarchy-monitor-state": {
+      "baseSha256": [
+        "a45baaef96920b37bf7dda77146ea49cf49d9e374e636a72523cc07ed767d55f"
+      ],
+      "sha256": "09930cb3a2dcc230e27e675f76099f42f61dabf1059cb4cef8a6b9bcce26d9f6"
+    },
+    "bin/omarchy-niri": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "7ed4b9978ebcd0109baa7784aad38bf1fcd61845b016c6ea3122596941e6ff0e"
+    },
+    "bin/omarchy-niri-autostart": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "353e16907fc3b337ea2c354c79d9a2555ce7e324c776e3d376f033c6a1d67654"
+    },
+    "bin/omarchy-niri-screenshot": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "0a84f090d9a294a3d17aed44069feb5e23a2d7253b98703c845697ebfbea6635"
+    },
+    "bin/omarchy-niri-watch": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "1ca3e6eb33f35cd704d2ccaced13baeb442c0ea8485e581f7fd43919e89ca5fc"
+    },
+    "bin/omarchy-refresh-hyprsunset": {
+      "baseSha256": [
+        "b0d48f8a811a930359a245675d8c5af814de43c0b45fc58f92eeb38b18c76af3"
+      ],
+      "sha256": "10e288b83fb38b7e4ebdb369b732323fe76da152d80fc5bf3a236a69c82043d4"
+    },
+    "bin/omarchy-remove-preinstalls": {
+      "baseSha256": [
+        "0c7b1284cf1977aae96774abd92df5301856a92d792c099e2bdf7d16551038b9"
+      ],
+      "sha256": "b6ef0f6fc1650b6c36494144c71cbd0d348f7299bfe01aa3580bb8695685a835"
+    },
+    "bin/omarchy-restart-hyprctl": {
+      "baseSha256": [
+        "fc0484cd85aa4d3a8c84685022f4b33ccfd86cfdf9fa27e0013fc8ca99994d64"
+      ],
+      "sha256": "601d8bf146837a646e22d3e3c88f8e45c46a356e68931dcd3c1c3b6b16915b63"
+    },
+    "bin/omarchy-restart-hyprsunset": {
+      "baseSha256": [
+        "08b057f5d29131bd95d8fbbd8f274e42a49c5a6a8b2d434b2cdd4a615cae0ab7"
+      ],
+      "sha256": "10e288b83fb38b7e4ebdb369b732323fe76da152d80fc5bf3a236a69c82043d4"
+    },
+    "bin/omarchy-restart-shell": {
+      "baseSha256": [
+        "e4c996275a15025c9aac829d34913d6bcaf8a30a17fae5ce5e260df2ddf21cd7"
+      ],
+      "sha256": "ebaec2f8cae73177918d0682a760c3cc0d096d96fcb5e9a1c08c2922ca23ac0a"
+    },
+    "bin/omarchy-screensaver": {
+      "baseSha256": [
+        "9ad1b57d322b5ed04112824ef48c98b7f14f1f08a60b583395558afbfd9fb7d2",
+        "34c480f6eaabef574b700aa7b023b2048eaf4400cfdf6e04227e642c02191ed2"
+      ],
+      "sha256": "4dccf4b0bec8079430bb2abd66374776a23f6b15fa2591abf0158da40108779d"
+    },
+    "bin/omarchy-setup-niri": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "2d98c1d2dbe1db5a7067f6785ff2907a224de0f423bf694ea59f125143aefee6"
+    },
+    "bin/omarchy-system-lock": {
+      "baseSha256": [
+        "f1953110658d819597d3c9d8df616350c362ee4c257227fcbdefac8275bbd596"
+      ],
+      "sha256": "8278e7283e9ec649636dbc24b9e23ba494f41990dc634dbc37124a39ea1410d6"
+    },
+    "bin/omarchy-system-wake": {
+      "baseSha256": [
+        "fb938c20587b91e07d8870a3b85b697ee1502482dd7c2caa816720f8f8062962"
+      ],
+      "sha256": "6347fff3dd92524506d4c5f97de63530cea315ed17a77f71bbb45323e7af3907"
+    },
+    "bin/omarchy-theme-set": {
+      "baseSha256": [
+        "79f60d66f5ab01a3faa05a35a0410ed81143413ac66860a54d48ea340fa3af14"
+      ],
+      "sha256": "f1975d66dd7ea9ea46bce19dd0187cda59efef11dd38f904bede7fb16284f77b"
+    },
+    "bin/omarchy-toggle-input-device": {
+      "baseSha256": [
+        "ab0f6ba417fdec8ddd329a8bf49f0bcf36ed9b5495ea5e5072c93c091430cd41"
+      ],
+      "sha256": "0c4cebae024d4ac54c3a2ef22b9d5df8eccf9f66485b15aeabbfea619b283141"
+    },
+    "bin/omarchy-toggle-nightlight": {
+      "baseSha256": [
+        "da1a268c58df3633441a13c2f7d0e45a04c479bcc678d3fc545c2405848c4ac8"
+      ],
+      "sha256": "183efe4ca7c2ae1dc28cd046df83d27a83ff685ca98988f65ef23a8685715ed0"
+    },
+    "bin/omarchy-update-restart": {
+      "baseSha256": [
+        "7bc95f8a0a3ae35cfd81453e08194f5660c27cf59528c7d95b4345f362030b60"
+      ],
+      "sha256": "d5b92bcc3185cac5443235c6a37e5d10dfb4b5f1b29ec4251e4ac7a4d53589c2"
+    },
+    "bin/omarchy-voxtype-install": {
+      "baseSha256": [
+        "72e582bb5c0610375ee5517ed9e3d4d7e6742a3fd82a6b4b1c4b453de418c525"
+      ],
+      "sha256": "b43d815c916a4d9477e518378adf57e376ca898a5ff477130f64e237275ebc35"
+    },
+    "bin/omarchy-voxtype-remove": {
+      "baseSha256": [
+        "99affac5ef89b06a5ed8da2e2eb6db47b4fdf02fb89d9ec351932054477334fc"
+      ],
+      "sha256": "921f3abfb9fb064e36ac650c174aa698828eadc2def21a7e64e2185bd4302bcc"
+    },
+    "bin/omarchy-windows-vm": {
+      "baseSha256": [
+        "25664986469a3a32f7739cd18c23cc6f3914026375f35577b3d30ab968d94738"
+      ],
+      "sha256": "b7cb7779857f7c96ecdadfec32ed221038a93cd30d560422d9a4eebe9b46bf50"
+    },
+    "config/niri/config.kdl": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "4ae6ef3b2911c6f578f776aa73f1c1a935b0144880d5b6299fec35eae3c99e12"
+    },
+    "config/omarchy/niri-style.json": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "351fbd5670a69b5f258f1f3c3c398d6d4fea00eb3874d2fc2d832c40236bab0e"
+    },
+    "default/niri/bridge.py": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "8b682bac1e432b26b1b09e9142b7480ec2ff4159f2b8d5041783853c3c182682"
+    },
+    "default/niri/config.kdl": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "e241ac4bd3b8b0ea7f495507bb89b064dc018675f9745f3434104dfd9cfd0d4d"
+    },
+    "default/niri/desktop.py": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "e050133901dcb289457e2c54b1442c6040768076c1853c86385dfbcb1682c1fd"
+    },
+    "default/niri/window-management.kdl": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "0c390836a6284e62c80865f9482db0a90b5f97dbabbd5100fa3906f37e4e611e"
+    },
+    "default/omarchy/omarchy-menu.jsonc": {
+      "baseSha256": [
+        "027096cc20b52f3073c7d61ad43ff1fc8fddeb127b05b41c129b0a97826cecb2"
+      ],
+      "sha256": "05fca839b26df6a124e49041ae1101665ee6d14a77a2ae4cd2e2e135415c6345"
+    },
+    "default/wayland-sessions/omarchy-niri.desktop": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "d9fbf2381605b1ba68a2f2f9f29550027b6941589f70052a2a72497a87081ff6"
+    },
+    "shell/Commons/Niri.qml": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "32b50c55a3979a7d0118ffd54d0b60c5511b2535758ab47cedb4c64b3250ce87"
+    },
+    "shell/Commons/NiriModel.js": {
+      "baseSha256": [
+        null
+      ],
+      "sha256": "77d724097aefc85becc01134e85ec34f66886c5e26c8d5374a1f7a3838e448e6"
+    },
+    "shell/Commons/Style.qml": {
+      "baseSha256": [
+        "f5901092617ae62645597199270afd4dfb0644d596bdfff16e1834fca6ad7243"
+      ],
+      "sha256": "9182b0dfb60b6ee45176fed54abc72a7ca406cbcd977fe7b684c6983e7681a7b"
+    },
+    "shell/Commons/qmldir": {
+      "baseSha256": [
+        "5593fa25d33b1e2d3ed8628ca2e0dce5074497608f2bad6652689e390727e5e8"
+      ],
+      "sha256": "b6a27abeb8a3b634ac7ac77426866bb71448ab0b526e6033088c2b01b2a284d3"
+    },
+    "shell/Ui/KeyboardPanel.qml": {
+      "baseSha256": [
+        "96245f2da8d38baa0017caa285d596c485bd19a3a4d2cd1675bee9d84ffba42d"
+      ],
+      "sha256": "c700f8d711e0ea7418d8a62822b0dd33e126d65dbc65fc623d926e01373ac30b"
+    },
+    "shell/Ui/PopupCard.qml": {
+      "baseSha256": [
+        "b3751c78dba9d3b6383c072c915c3d1ecf5e2227cc8417127323077df1f0af5a"
+      ],
+      "sha256": "d42ce5e6a7cbc5e15c93b93de2adb9edcadaaa71b546f978248b512560fefabe"
+    },
+    "shell/plugins/bar/Bar.qml": {
+      "baseSha256": [
+        "1f345f795fe6633a7eb0934b677b86f6c359e0b062567521eeeec7dbf46987c1"
+      ],
+      "sha256": "75d04021d898c395f4329e43ef93e206102a277900e6a935fe6e84d13346d053"
+    },
+    "shell/plugins/bar/indicators/ScreenRecording.qml": {
+      "baseSha256": [
+        "e336f4e14e0875fe56cb0c1008799506eb5023051c80e530b9e1f35fedbce2df"
+      ],
+      "sha256": "38d5fb6b84c39bd8488d0420710a070bdcf696b89a6d94d2be73230b11f3637e"
+    },
+    "shell/plugins/bar/widgets/ActiveWindow.qml": {
+      "baseSha256": [
+        "e53bbf968f78a9c4748c1872d6b34e1914070fc170641730bc2f7b4bce4e0173"
+      ],
+      "sha256": "b9e7310b28df42e18f1eea41380e4479736c26d96f6e645e8c695fa90a04f6aa"
+    },
+    "shell/plugins/bar/widgets/KeyboardLayout.qml": {
+      "baseSha256": [
+        "9a80f7e73da4c2c280268d1e9152045697cf1c4f118e2be5cb32a43c07e8f6bb"
+      ],
+      "sha256": "5254c8c472ca3b8d2bb08788d8e750ac87cca9d0e21cef5fc542d7e43358b3d6"
+    },
+    "shell/plugins/bar/widgets/Workspaces.qml": {
+      "baseSha256": [
+        "d0509e734d76d3c8cb68502a657ebae52e66bcc06988f2930567d67004f28325"
+      ],
+      "sha256": "702f5d25990a522706f47221d47ca84661a06beb51f03077a8b1e041c96b29d4"
+    },
+    "shell/plugins/lock/Service.qml": {
+      "baseSha256": [
+        "3f0a265a09f7957e8f5d74666595d3136ec64899c414426190460f9e2098e701"
+      ],
+      "sha256": "fbc1a85af21cd42663e5d75fc4b07732830fb386c514b057683d1bc9a22e5e7c"
+    },
+    "shell/plugins/notifications/Service.qml": {
+      "baseSha256": [
+        "11665542e70df80ccd3c785a6143dee2daefd2082e4f75c740adc2c9947cf7c2",
+        "e1f17b537e06c4e5d904f3c7ca0292ece330503f684430272d490fa78815bf04"
+      ],
+      "sha256": "f7d1da0be4cb4820139ffee80a3428e87a27bf76e132fa561c33013928f40c50"
+    },
+    "shell/plugins/panels/monitor/Panel.qml": {
+      "baseSha256": [
+        "2f3f95e5fc75af2af1f1af418a65469c37714b2bec38cfd2206bdd3f1f1b0e69"
+      ],
+      "sha256": "ee9bdce68120b9a2a5bede81bf4955a95d75a68fb2e4a0e38d01194c4b7cb437"
+    },
+    "shell/plugins/services/idle/Service.qml": {
+      "baseSha256": [
+        "c61f91b55adf864e4ce571526644727b7a2e9f672964af8098b9fd9a4913eee2",
+        "43f7d1dbf07885316ea7cb58b4513ad4ff5287abe5da1b91b85daace6b940b46"
+      ],
+      "sha256": "ff66d1ef03911e2b0a214319f0ca740bfa7f9d13e5cb8891a6ad136de9dfc48e"
+    },
+    "shell/plugins/services/nightlight/Service.qml": {
+      "baseSha256": [
+        "721cd63d2404859918e28f92420e87369328c26fcef7df821443baa16d0b1897"
+      ],
+      "sha256": "7ae25d8ce765c5f91e0f7d92769feaf5dd34bb5630574c78bce9180a4e43fb08"
+    }
+  }
+}

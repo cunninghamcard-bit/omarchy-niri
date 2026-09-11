@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# omarchy:summary=Start Omarchy services in the Niri session
+# omarchy:hidden=true
+
+set -euo pipefail
+
+# niri --session exports its environment; UWSM's autoready completes startup.
+# A second finalize races that notification and can abort this autostart.
+omarchy-niri theme
+omarchy-launch-shell &
+omarchy-niri-watch &
+omarchy-powerprofiles-init &
+uwsm-app -- udiskie --automount --no-notify --no-tray &
+omarchy-hook post-boot &
+wait

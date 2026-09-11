@@ -1,0 +1,12 @@
+Started [systemd-run] /bin/bash -c "systemctl stop sddm; python3 /opt/niri-acceptance/omarchy-niri-extension/manage.py uninstall && python3 /opt/niri-acceptance/omarchy-niri-extension/manage.py install --user aa --skip-packages; result=\$?; systemctl start sddm; echo \$result > /mnt/niri-results/final-install.exit" --.
+Original session restored. Reboot. Packages retained; backups and subsequent edits saved at /var/lib/omarchy-niri-uninstalled-1789120307948441242
+2026-09-11T09:51:48.580661Z DEBUG niri_config: loaded config from "/var/lib/omarchy-niri/generations/1789120308091168575/default/niri/config.kdl"
+2026-09-11T09:51:48.580774Z  INFO niri: config is valid
+pam_unix(runuser:session): session opened for user aa(uid=1000) by aa(uid=0)
+pam_unix(runuser:session): session closed for user aa
+pam_unix(runuser:session): session opened for user aa(uid=1000) by aa(uid=0)
+pam_unix(runuser:session): session closed for user aa
+/tmp/tmpai982uuj: parsed OK
+Installed. Log out and select Omarchy (Niri), or reboot. Restore: sudo omarchy-niri-extension uninstall
+niri-final-install.service: Deactivated successfully.
+niri-final-install.service: Consumed 940ms CPU time over 1.982s wall clock time, 68.7M memory peak.

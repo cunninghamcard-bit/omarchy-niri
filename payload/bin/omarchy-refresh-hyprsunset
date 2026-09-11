@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Reset nightlight to its default temperature
+# omarchy:hidden=true
+
+exec omarchy-toggle-nightlight --temperature 6500

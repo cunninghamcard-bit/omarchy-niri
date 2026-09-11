@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# omarchy:summary=Toggle nightlight screen temperature using Gammastep
+# omarchy:args=[--status|--temperature KELVIN]
+# omarchy:examples=omarchy toggle nightlight
+
+set -euo pipefail
+state="$XDG_RUNTIME_DIR/omarchy-niri-nightlight"
+unit=omarchy-niri-nightlight.service
+unsupported="$XDG_RUNTIME_DIR/omarchy-niri-nightlight-unavailable"
+current_temp() {
+  if systemctl --user is-active --quiet "$unit" && [[ -r $state ]]; then cat "$state"; else echo 6500; fi
+}
+if [[ ${1:-} == "--status" ]]; then
+  temp=$(current_temp)
+  supported=true
+  [[ ! -f $unsupported ]] || supported=false
+  jq -cn --argjson temp "$temp" --argjson supported "$supported" '{enabled:($temp < 6000), temperature:$temp, supported:$supported}'
+  exit 0
+fi
+if [[ ${1:-} == "--temperature" ]]; then
+  temp=${2:-}
+  [[ $temp =~ ^[0-9]+$ ]] && (( temp >= 1000 && temp <= 10000 )) || exit 2
+elif [[ $# == 0 ]]; then
+  if (( $(current_temp) < 6000 )); then temp=6500; else temp=4000; fi
+else
+  echo "Usage: omarchy-toggle-nightlight [--status|--temperature KELVIN]" >&2
+  exit 2
+fi
+systemctl --user stop "$unit" 2>/dev/null || true
+rm -f "$state"
+if (( temp != 6500 )); then
+  systemd-run --user --collect --unit="$unit" gammastep -m wayland -P -O "$temp" >/dev/null
+  sleep 0.3
+  if ! systemctl --user is-active --quiet "$unit"; then
+    echo "Nightlight failed; inspect journalctl --user -u $unit" >&2
+    exit 1
+  fi
+  invocation=$(systemctl --user show "$unit" -p InvocationID --value)
+  if journalctl --user "_SYSTEMD_INVOCATION_ID=$invocation" --no-pager -o cat | grep -q 'Zero outputs support gamma adjustment'; then
+    systemctl --user stop "$unit"
+    touch "$unsupported"
+    omarchy-notification-send "Nightlight unavailable" "This display driver does not support gamma adjustment."
+    exit 1
+  fi
+  rm -f "$unsupported"
+  printf '%s\n' "$temp" >"$state"
+fi
+omarchy-shell -q nightlight refresh || true

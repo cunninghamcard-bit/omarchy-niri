@@ -1,0 +1,9 @@
+Running as unit: run-p7909-i2100.service
+{"locked":true,"requested":true,"pending":false,"sessionLocked":true,"secure":true,"realScreens":1,"passwordPam":true,"fingerprint":false,"authenticating":false,"lastEvent":"secure=true","lastEventAt":"2026-09-11T08:55:24.884Z"}
+Refusing to restart Omarchy shell while the session is locked.
+{"locked":true,"requested":true,"pending":false,"sessionLocked":true,"secure":true,"realScreens":1,"passwordPam":true,"fingerprint":false,"authenticating":false,"lastEvent":"secure=true","lastEventAt":"2026-09-11T08:55:24.884Z"}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 344ms
+             CPU time consumed: 326ms
+                   Memory peak: 9.4M (swap: 0B)

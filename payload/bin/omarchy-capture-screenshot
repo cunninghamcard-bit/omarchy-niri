@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Capture a Niri output, window, or region
+# omarchy:hidden=true
+
+exec omarchy-niri-screenshot "$@"

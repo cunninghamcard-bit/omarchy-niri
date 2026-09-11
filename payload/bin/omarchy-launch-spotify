@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# omarchy:summary=Launch Spotify or start its installer when missing.
+
+set -e
+
+if omarchy-focus-app '\bspotify\b'; then
+  exit 0
+elif [[ -x /usr/bin/spotify ]]; then
+  exec setsid uwsm-app -- /usr/bin/spotify
+else
+  exec omarchy-launch-floating-terminal-with-presentation omarchy-install-service-spotify
+fi

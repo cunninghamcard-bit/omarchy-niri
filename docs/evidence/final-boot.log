@@ -1,0 +1,27 @@
+545 niri --session
+607 niri msg --json event-stream
+809 /usr/bin/niri msg --json event-stream
+Running as unit: run-p843-i8452.service; invocation ID: 0aaf20587fb445d79915d7a877476461
+ok
+{
+  "user": "aa",
+  "base": "/usr/share/omarchy",
+  "generation": "/var/lib/omarchy-niri/generations/1789120308091168575",
+  "version": "0.1.0"
+}
+
+2026-09-11T09:53:45.152827Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-outputs.kdl"
+2026-09-11T09:53:45.154277Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-input.kdl"
+2026-09-11T09:53:45.154676Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-flags.kdl"
+2026-09-11T09:53:45.155663Z DEBUG niri_config: loaded config from "/home/aa/.config/niri/config.kdl"
+2026-09-11T09:53:45.155902Z  INFO niri: config is valid
+ok
+[{"id":2,"title":"Omarchy + Niri","app_id":"org.omarchy.niri-acceptance","pid":1192,"workspace_id":1,"is_focused":true,"is_floating":false,"is_urgent":false,"layout":{"pos_in_scrolling_layout":[1,1],"tile_size":[393.0,464.0],"window_size":[389,460],"tile_pos_in_workspace_view":null,"window_offset_in_tile":[2.0,2.0]},"focus_timestamp":{"secs":5,"nanos":897016044}}]
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 2.031s
+             CPU time consumed: 169ms
+                   Memory peak: 12.7M (swap: 0B)
+PASS: installed runtime matches all payload hashes
+PASS: clean boot without debug shell or QA account; Niri and original Quickshell are running
+Removed '/etc/systemd/system/multi-user.target.wants/niri-final-boot-check.service'.

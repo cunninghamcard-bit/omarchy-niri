@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Toggle Niri desktop flags
+# omarchy:hidden=true
+
+exec omarchy-niri flag "$@"

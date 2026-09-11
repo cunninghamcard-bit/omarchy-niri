@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Omarchy (Niri)
+Comment=Omarchy shell with Niri, managed by UWSM
+Exec=uwsm start -g -1 -e -D niri niri.desktop
+TryExec=niri
+Type=Application
+DesktopNames=niri

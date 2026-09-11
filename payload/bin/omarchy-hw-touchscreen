@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Find a connected touchscreen
+# omarchy:hidden=true
+
+exec omarchy-niri device touchscreen

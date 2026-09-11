@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Find a connected touchpad
+# omarchy:hidden=true
+
+exec omarchy-niri device touchpad

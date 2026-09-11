@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# omarchy:summary=Launch an app or focus an existing window
+# omarchy:hidden=true
+
+[[ $# -gt 0 ]] || { echo "Usage: omarchy-launch-or-focus pattern [command]" >&2; exit 1; }
+if omarchy-focus-app "$1"; then exit 0; fi
+exec setsid bash -c "${2:-uwsm-app -- $1}"
