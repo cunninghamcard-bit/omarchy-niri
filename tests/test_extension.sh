@@ -9,7 +9,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 manifest=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["entryPoints"]["service"])' "$here/manifest.json")
 [[ "$manifest" == "plugin/Service.qml" ]] || { echo "FAIL: service entry point" >&2; exit 1; }
-rg -q 'command: \["bash", extension, "notify"\]' "$here/plugin/Service.qml" || {
+grep -Fq 'command: ["bash", extension, "notify"]' "$here/plugin/Service.qml" || {
   echo "FAIL: service does not invoke notify" >&2
   exit 1
 }
