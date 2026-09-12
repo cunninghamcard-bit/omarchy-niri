@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "omarchy-niri",
   "name": "Omarchy Niri",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "cunninghamcard-bit",
   "description": "Run the Omarchy desktop on the Niri compositor. Enabling prompts for the one-time system setup.",
   "kinds": ["service"],

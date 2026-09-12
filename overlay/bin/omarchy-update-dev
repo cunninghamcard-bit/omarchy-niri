@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# omarchy:summary=No dev checkout to update in the Niri view
+# omarchy:summary=Update the Niri runtime through its plugin checkout
 # omarchy:hidden=true
 
-# omarchy-update aborts when OMARCHY_PATH is not a git checkout. The view is
+# omarchy-update aborts when OMARCHY_PATH is not a git checkout. The private runtime is
 # not one; the extension updates from its own clone (omarchy-niri-extension update).
 exit 0

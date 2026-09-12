@@ -7,6 +7,8 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+env:
+  OMARCHY_TEST_BASE: test-artifacts/upstream
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -23,33 +25,47 @@ jobs:
       - run: python3 -m unittest discover -s tests -v
       - run: node tests/niri-model-test.cjs
       - run: bash tests/test_extension.sh
-      - run: bash tests/coverage.sh test-artifacts/upstream
+      - name: Prepare pinned candidate
+        run: |
+          set -o pipefail
+          bash tests/coverage.sh test-artifacts/upstream 2>&1 | tee /tmp/pinned-compatibility.log
       - name: Valid Omarchy plugin
         # Validate a clean export, which is what omarchy plugin add clones.
         run: |
           mkdir -p /tmp/plugin && git archive HEAD | tar -x -C /tmp/plugin
           bash test-artifacts/upstream/bin/omarchy-plugin-validate /tmp/plugin
-      - name: Patches apply to the pinned Omarchy
-        run: |
-          cd test-artifacts/upstream
-          find ../../patches -name '*.patch' | while read -r p; do
-            t=${p#../../patches/}; git apply --include="${t%.patch}" "$p"
-          done
+      - name: Upload pinned compatibility log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinned-compatibility
+          path: /tmp/pinned-compatibility.log
 
-  # Not a gate: tells us before users do when upstream main moves under a patch
-  # or adds a compositor call we do not cover.
   upstream-main:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with:
           repository: omacom/omarchy
           path: test-artifacts/upstream
-      - run: bash tests/coverage.sh test-artifacts/upstream
-      - run: |
-          cd test-artifacts/upstream
-          find ../../patches -name '*.patch' | while read -r p; do
-            t=${p#../../patches/}; git apply --include="${t%.patch}" "$p" || echo "::warning::${t%.patch} no longer applies"
-          done
+          fetch-depth: 0
+      - name: Prepare candidate against upstream main
+        run: |
+          set -o pipefail
+          bash tests/coverage.sh test-artifacts/upstream 2>&1 | tee /tmp/upstream-compatibility.log
+      - name: Save upstream diff and compatibility log
+        if: always()
+        run: |
+          reviewed_ref=$(python3 -c 'import json; print(json.load(open("compatibility.json"))["base"])')
+          git -C test-artifacts/upstream diff --no-ext-diff "$reviewed_ref" HEAD > /tmp/upstream-diff.patch
+          mkdir -p /tmp/omarchy-niri-upstream-report
+          cp /tmp/upstream-compatibility.log /tmp/omarchy-niri-upstream-report/compatibility.log 2>/dev/null || true
+          cp /tmp/upstream-diff.patch /tmp/omarchy-niri-upstream-report/upstream-diff.patch
+      - name: Upload upstream compatibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upstream-compatibility
+          path: /tmp/omarchy-niri-upstream-report

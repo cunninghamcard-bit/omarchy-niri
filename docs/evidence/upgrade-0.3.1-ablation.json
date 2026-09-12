@@ -1,0 +1,80 @@
+{
+  "experiment": "bounded-safety-guard-ablation",
+  "base": "<repo>/test-artifacts/upstream-clean",
+  "source_copies": "<temporary-copies>",
+  "production_or_tracked_tests_modified": false,
+  "baseline": {
+    "command": "OMARCHY_TEST_BASE=<repo>/test-artifacts/upstream-clean python -m unittest tests.test_compat tests.test_manager",
+    "exit": 0,
+    "tests": 29,
+    "passed": 29,
+    "failed": 0,
+    "log": "baseline.log"
+  },
+  "ablations": [
+    {
+      "name": "replacement-hash-drift-rejection",
+      "mutation": "if failures: raise ValueError(...) -> if False and failures: raise ValueError(...)",
+      "scope": "temporary copy compat.py only",
+      "command": "python -m unittest discover -s <repo>/tests -p test_compat.py",
+      "exit": 1,
+      "tests": 16,
+      "passed": 15,
+      "failed": 1,
+      "failure_names": [
+        "test_drift_rejects"
+      ],
+      "contract_lost": "changed replacement was not rejected with Omarchy changed",
+      "log": "hash-drift.log"
+    },
+    {
+      "name": "final-composed-runtime-hyprland-scanner",
+      "mutation": "if bad: raise ValueError(...) -> if False and bad: raise ValueError(...)",
+      "scope": "temporary copy compat.py only",
+      "command": "python -m unittest discover -s <repo>/tests -p test_compat.py",
+      "exit": 1,
+      "tests": 16,
+      "passed": 13,
+      "failed": 3,
+      "failure_names": [
+        "test_hypr_interface_added_by_patch_is_found",
+        "test_hypr_interface_in_new_bin_is_found",
+        "test_hyprland_named_command_is_still_scanned"
+      ],
+      "contract_lost": "injected hyprctl/Hyprland interfaces were accepted",
+      "log": "scanner.log"
+    },
+    {
+      "name": "activate-exception-recovery",
+      "mutation": "activation except BaseException: recover(); raise -> activation except BaseException: raise",
+      "scope": "temporary copy manage.py only",
+      "command": "python -m unittest discover -s <repo>/tests -p test_manager.py",
+      "exit": 1,
+      "tests": 13,
+      "passed": 10,
+      "failed": 3,
+      "failure_names": [
+        "test_configure_system_failure_restores_originals",
+        "test_niri_validation_failure_restores_user_and_system_files",
+        "test_refresh_does_not_overwrite_user_edited_system_configuration"
+      ],
+      "contract_lost": "partial configuration writes remained and edited-file protection did not raise",
+      "log": "recovery.log"
+    }
+  ],
+  "evidence": {
+    "baseline_log": "baseline.log",
+    "ablation_logs": [
+      "hash-drift.log",
+      "scanner.log",
+      "recovery.log"
+    ],
+    "exit_files": [
+      "baseline.exit",
+      "hash-drift.exit",
+      "scanner.exit",
+      "recovery.exit"
+    ]
+  },
+  "scope_note": "Focused experiment before the final two journal-initialization tests. Manager tests changed concurrently; the recovery copy includes the newly added edited-file check. Final portable suite has 49 passing tests."
+}

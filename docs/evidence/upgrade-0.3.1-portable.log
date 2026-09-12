@@ -1,0 +1,99 @@
+Omarchy Niri 0.3.1 portable acceptance
+
+--- python ---
+test_app_identity_precedes_title (test_bridge.NiriBridgeTests.test_app_identity_precedes_title) ... ok
+test_atomic_state_can_be_replaced (test_bridge.NiriBridgeTests.test_atomic_state_can_be_replaced) ... ok
+test_invalid_arguments_fail_before_contacting_the_compositor (test_bridge.NiriBridgeTests.test_invalid_arguments_fail_before_contacting_the_compositor) ... ok
+test_invalid_theme_keeps_the_previous_generated_file (test_bridge.NiriBridgeTests.test_invalid_theme_keeps_the_previous_generated_file) ... ok
+test_ipc_request_and_error_contract (test_bridge.NiriBridgeTests.test_ipc_request_and_error_contract) ... ok
+test_lock_intent_is_scoped_to_the_compositor_socket (test_bridge.NiriBridgeTests.test_lock_intent_is_scoped_to_the_compositor_socket) ... ok
+test_monitor_state_survives_a_stalled_brightness_probe (test_bridge.NiriBridgeTests.test_monitor_state_survives_a_stalled_brightness_probe) ... ok
+test_deleted_patch_is_rejected (test_compat.CompatTests.test_deleted_patch_is_rejected) ... ok
+test_deleted_replacement_is_rejected (test_compat.CompatTests.test_deleted_replacement_is_rejected) ... ok
+test_drift_rejects (test_compat.CompatTests.test_drift_rejects) ... ok
+test_existing_destination_rejects (test_compat.CompatTests.test_existing_destination_rejects) ... ok
+test_hypr_interface_added_by_patch_is_found (test_compat.CompatTests.test_hypr_interface_added_by_patch_is_found) ... ok
+test_hypr_interface_in_new_bin_is_found (test_compat.CompatTests.test_hypr_interface_in_new_bin_is_found) ... ok
+test_hyprland_named_command_is_still_scanned (test_compat.CompatTests.test_hyprland_named_command_is_still_scanned) ... ok
+test_missing_tree_rejects (test_compat.CompatTests.test_missing_tree_rejects) ... ok
+test_new_upstream_binding_file_needs_review (test_compat.CompatTests.test_new_upstream_binding_file_needs_review) ... ok
+test_patch_rejects (test_compat.CompatTests.test_patch_rejects) ... ok
+test_real_pinned_base (test_compat.CompatTests.test_real_pinned_base) ... ok
+test_removed_patch_target_rejects (test_compat.CompatTests.test_removed_patch_target_rejects) ... ok
+test_reviewed_try_omarchy_variant (test_compat.CompatTests.test_reviewed_try_omarchy_variant) ... ok
+test_symlink_is_materialized (test_compat.CompatTests.test_symlink_is_materialized) ... ok
+test_unrelated_upstream_change_is_allowed (test_compat.CompatTests.test_unrelated_upstream_change_is_allowed) ... ok
+test_unreviewed_overlay_rejects (test_compat.CompatTests.test_unreviewed_overlay_rejects) ... ok
+test_enabled_action_rejects_unknown_value (test_desktop.DesktopContracts.test_enabled_action_rejects_unknown_value) ... ok
+test_enabled_action_uses_current_state (test_desktop.DesktopContracts.test_enabled_action_uses_current_state) ... ok
+test_input_toggle_requires_a_detected_device (test_desktop.DesktopContracts.test_input_toggle_requires_a_detected_device) ... ok
+test_scale_rejects_missing_focused_output (test_desktop.DesktopContracts.test_scale_rejects_missing_focused_output) ... ok
+test_scale_rejects_out_of_range_value_before_persisting (test_desktop.DesktopContracts.test_scale_rejects_out_of_range_value_before_persisting) ... ok
+test_set_output_persists_a_toggle_without_touching_ipc (test_desktop.DesktopContracts.test_set_output_persists_a_toggle_without_touching_ipc) ... ok
+test_set_output_refuses_disabling_last_logical_output (test_desktop.DesktopContracts.test_set_output_refuses_disabling_last_logical_output) ... ok
+test_set_output_rejects_unknown_output (test_desktop.DesktopContracts.test_set_output_rejects_unknown_output) ... ok
+test_window_width_rejects_unknown_mode (test_desktop.DesktopContracts.test_window_width_rejects_unknown_mode) ... ok
+test_configure_system_failure_restores_originals (test_manager.ManagerTests.test_configure_system_failure_restores_originals) ... ok
+test_fresh_install_uninstall_removes_new_files (test_manager.ManagerTests.test_fresh_install_uninstall_removes_new_files) ... ok
+test_install_update_uninstall_preserves_original_global_files (test_manager.ManagerTests.test_install_update_uninstall_preserves_original_global_files) ... ok
+test_journal_write_failure_removes_unpublished_candidate (test_manager.ManagerTests.test_journal_write_failure_removes_unpublished_candidate) ... ok
+test_legacy_migration_preserves_backups_and_uninstalls (test_manager.ManagerTests.test_legacy_migration_preserves_backups_and_uninstalls) ... ok
+test_niri_validation_failure_restores_user_and_system_files (test_manager.ManagerTests.test_niri_validation_failure_restores_user_and_system_files) ... ok
+test_recover_before_and_after_current_publication (test_manager.ManagerTests.test_recover_before_and_after_current_publication) ... ok
+test_refresh_current_rename_failure_keeps_old_tree (test_manager.ManagerTests.test_refresh_current_rename_failure_keeps_old_tree) ... ok
+test_refresh_does_not_overwrite_user_edited_system_configuration (test_manager.ManagerTests.test_refresh_does_not_overwrite_user_edited_system_configuration) ... ok
+test_refresh_prepare_rejection_keeps_current_tree (test_manager.ManagerTests.test_refresh_prepare_rejection_keeps_current_tree) ... ok
+test_restart_after_journal_initialization_interrupted (test_manager.ManagerTests.test_restart_after_journal_initialization_interrupted) ... ok
+test_restore_preflights_all_files_before_mutating (test_manager.ManagerTests.test_restore_preflights_all_files_before_mutating) ... ok
+test_state_directory_alias_does_not_undo_a_committed_install (test_manager.ManagerTests.test_state_directory_alias_does_not_undo_a_committed_install) ... ok
+test_uninstall_preserves_later_edits (test_manager.ManagerTests.test_uninstall_preserves_later_edits) ... ok
+test_writer_collision_is_real_fcntl_lock (test_manager.ManagerTests.test_writer_collision_is_real_fcntl_lock) ... ok
+test_migration_and_hook_follow_runtime_published_by_system_packages (test_update_flow.UpdateFlowTests.test_migration_and_hook_follow_runtime_published_by_system_packages) ... ok
+test_status_failure_stops_before_migration_and_preserves_failure (test_update_flow.UpdateFlowTests.test_status_failure_stops_before_migration_and_preserves_failure) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 9.108s
+
+OK
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Original session restored; reboot. Backups and edits: /private/var/folders/4d/9sx7h50d3dzdz0mp_gyrv95w0000gn/T/tmpw_k5gr_b/state-uninstalled-1789187933555896000
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Original session restored; reboot. Backups and edits: /private/var/folders/4d/9sx7h50d3dzdz0mp_gyrv95w0000gn/T/tmpz4kvsrqq/state-uninstalled-1789187933630628000
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Original session restored; reboot. Backups and edits: /private/var/folders/4d/9sx7h50d3dzdz0mp_gyrv95w0000gn/T/tmpm675ogsf/state-uninstalled-1789187933747288000
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+Original session restored; reboot. Backups and edits: /private/var/folders/4d/9sx7h50d3dzdz0mp_gyrv95w0000gn/T/tmpvt891p2o/state-uninstalled-1789187934106795000
+
+--- js ---
+PASS: 11 Niri event model assertions
+
+--- entry ---
+ok: plugin service and unprivileged manager smoke checks
+
+--- candidate ---
+compatibility ok: 26 patches; runtime=/var/folders/4d/9sx7h50d3dzdz0mp_gyrv95w0000gn/T/tmp.kChs4uhSHw/runtime
+
+--- exit results ---
+[
+  {
+    "name": "python",
+    "exit": 0
+  },
+  {
+    "name": "js",
+    "exit": 0
+  },
+  {
+    "name": "entry",
+    "exit": 0
+  },
+  {
+    "name": "candidate",
+    "exit": 0
+  }
+]

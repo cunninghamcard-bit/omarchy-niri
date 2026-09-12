@@ -73,6 +73,7 @@ binds {
   Mod+Shift+O hotkey-overlay-title="Obsidian" { spawn-sh "uwsm-app -- obsidian"; }
   Mod+Shift+W hotkey-overlay-title="Omawrite" { spawn-sh "uwsm-app -- omawrite"; }
   Mod+Shift+slash hotkey-overlay-title="Passwords" { spawn-sh "omarchy-launch-1password"; }
+  Ctrl+Shift+Space hotkey-overlay-title="1Password Quick Access" { spawn "1password" "--quick-access"; }
   Mod+Shift+A hotkey-overlay-title="ChatGPT" { spawn-sh "omarchy-launch-webapp https://chatgpt.com"; }
   Mod+Shift+Alt+A hotkey-overlay-title="Grok" { spawn-sh "omarchy-launch-webapp https://grok.com"; }
   Mod+Shift+C hotkey-overlay-title="Calendar" { spawn-sh "omarchy-launch-webapp https://app.hey.com/calendar/weeks/"; }
@@ -143,25 +144,8 @@ binds {
   Mod+Ctrl+W hotkey-overlay-title="Network" { spawn-sh "omarchy-shell shell toggle omarchy.network"; }
   Mod+Ctrl+P hotkey-overlay-title="Power" { spawn-sh "omarchy-shell shell toggle omarchy.power"; }
   Mod+Ctrl+T hotkey-overlay-title="Activity" { spawn-sh "omarchy-launch-tui btop"; }
-}
 
-switch-events {
-  lid-close { spawn "omarchy-system-lid-close"; }
-  lid-open { spawn "omarchy-niri" "clamshell" "open"; }
-}
-window-rule {
-  match app-id=r#"^WebcamOverlay-"#
-  open-floating true
-  default-floating-position x=20 y=20 relative-to="bottom-right"
-}
-
-
-
-window-rule { opacity 0.98; }
-
-// Omarchy key positions, translated to native Niri actions. Directional
-// overrides are isolated in window-management.kdl so they cannot shadow these.
-binds {
+  // Window actions retain Omarchy key positions; directions live in window-management.kdl.
   Mod+W repeat=false { close-window; }
   Mod+T { toggle-window-floating; }
   Mod+F { fullscreen-window; }
@@ -250,3 +234,15 @@ binds {
   Mod+Ctrl+8 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "8"; }
   Mod+Ctrl+9 { spawn "omarchy-shell" "-q" "shell" "togglePanelAt" "right" "9"; }
 }
+
+switch-events {
+  lid-close { spawn "omarchy-system-lid-close"; }
+  lid-open { spawn "omarchy-niri" "clamshell" "open"; }
+}
+window-rule {
+  match app-id=r#"^WebcamOverlay-"#
+  open-floating true
+  default-floating-position x=20 y=20 relative-to="bottom-right"
+}
+
+window-rule { opacity 0.98; }

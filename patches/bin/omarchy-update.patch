@@ -1,0 +1,18 @@
+--- a/bin/omarchy-update
++++ b/bin/omarchy-update
+@@ -45,6 +45,15 @@
+   # them, so everything below waits on this finishing. An upgrade that stopped
+   # takes the update with it rather than migrating against what is still on disk.
+   omarchy-update-system-pkgs
++  # The package hook may have published a new runtime. Migrations and hooks
++  # must use that same version, not the tree this update process started from.
++  omarchy-niri-extension status >/dev/null || {
++    echo "Niri compatibility review required; previous runtime retained. Run omarchy-niri-extension status." >&2
++    exit 1
++  }
++  source /etc/omarchy.conf
++  export PATH="$OMARCHY_PATH/bin:$PATH"
++  hash -r
+   omarchy-migrate
+   omarchy-hook post-update
+   omarchy-update-aur-pkgs

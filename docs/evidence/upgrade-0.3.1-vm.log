@@ -1,0 +1,79 @@
+Omarchy Niri 0.3.1 ARM VM acceptance evidence
+
+All guest changes were made on disposable clone /tmp/omarchy-niri-vm-c73445e-5/rootfs.ext4.
+The original work/try-niri-vm/rootfs.ext4 was not modified.
+
+Source/runtime checks
+  update --skip-packages: work/try-niri-vm/artifacts/manager-update2-c73445e.exit (0)
+  successful rebuild: work/try-niri-vm/artifacts/manager-rebuild3-c73445e.exit (0)
+  release: version 0.3.1, 26 patches, 45 replacements
+  shell/idle/Niri access: work/try-niri-vm/artifacts/shell-access-c73445e.log
+    shell ping=0, idle status=0, Niri outputs=0
+    observed socket at that point: /run/user/1000/niri.wayland-1.530.sock
+  cold boot process evidence: /tmp/omarchy-niri-vm-c73445e-7/coldboot.log
+    niri --session and Quickshell were running from runtime 8ff97d9241174799a0aea8d127e164a3
+  desktop screenshot: upgrade-0.3.1-desktop.png
+
+Upgrade safety
+  temporary drift rejection: work/try-niri-vm/artifacts/drift-rebuild2-c73445e.log
+  exit: work/try-niri-vm/artifacts/drift-rebuild2-c73445e.exit (1)
+  message: Omarchy changed; review required: bin/omarchy-screensaver
+  current remained unchanged.
+  The drift was injected with cp -a, which preserved an absolute symlink and changed
+  the clone's /usr/bin/omarchy-screensaver. It was restored from the earlier tar -h
+  export; no independent cp -aL drift run was performed.
+  Final screensaver hash in the clone and baseline export: 34c480f6eaabef574b700aa7b023b2048eaf4400cfdf6e04227e642c02191ed2.
+
+Rollback/fresh install
+  uninstall: work/try-niri-vm/artifacts/manager-uninstall-c73445e.exit (0)
+  original OMARCHY_PATH and omarchy.desktop session restored
+  fresh install --user aa --skip-packages: work/try-niri-vm/artifacts/manager-install-c73445e.exit (0)
+
+The temporary root SSH key was removed. The final normal-boot QEMU command had no
+init=/usr/bin/bash override. The tested source contained Transaction.check and
+configure_system in the manager; no new tests were run during evidence cleanup.
+
+Recorded command output (ANSI escapes removed)
+
+manager-update2-c73445e (exit 0)
+/tmp/tmpbpf7s0in: parsed OK
+2026-09-12T04:28:03.199152Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-outputs.kdl"
+2026-09-12T04:28:03.199856Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-input.kdl"
+2026-09-12T04:28:03.200051Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-flags.kdl"
+2026-09-12T04:28:03.200392Z DEBUG niri_config: loaded config from "/home/aa/.config/niri/.niri-validate-n848q4d7.kdl"
+2026-09-12T04:28:03.200615Z  INFO niri: config is valid
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+
+manager-rebuild3-c73445e (exit 0)
+/tmp/tmp2s8c2ec_: parsed OK
+2026-09-12T04:35:40.512610Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-outputs.kdl"
+2026-09-12T04:35:40.513315Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-input.kdl"
+2026-09-12T04:35:40.513765Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-flags.kdl"
+2026-09-12T04:35:40.514596Z DEBUG niri_config: loaded config from "/home/aa/.config/niri/.niri-validate-aezwpfrl.kdl"
+2026-09-12T04:35:40.514812Z  INFO niri: config is valid
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+
+drift-rebuild2-c73445e (exit 1)
+omarchy-niri-extension: Omarchy changed; review required: bin/omarchy-screensaver
+
+manager-uninstall-c73445e (exit 0)
+Original session restored; reboot. Backups and edits: /var/lib/omarchy-niri-uninstalled-1789187765641424054
+
+manager-install-c73445e (exit 0)
+/tmp/tmpkww8myu1: parsed OK
+2026-09-12T04:36:24.111961Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-outputs.kdl"
+2026-09-12T04:36:24.112747Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-input.kdl"
+2026-09-12T04:36:24.112965Z  WARN niri_config: optional include not found: "/home/aa/.config/niri/omarchy-flags.kdl"
+2026-09-12T04:36:24.113365Z DEBUG niri_config: loaded config from "/home/aa/.config/niri/.niri-validate-fviiqaka.kdl"
+2026-09-12T04:36:24.113757Z  INFO niri: config is valid
+Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.
+
+Normal cold boot process output
+up
+532 niri --session
+573 /bin/bash /var/lib/omarchy-niri/runtimes/8ff97d9241174799a0aea8d127e164a3/bin/omarchy-niri-autostart
+586 /bin/bash /var/lib/omarchy-niri/runtimes/8ff97d9241174799a0aea8d127e164a3/bin/omarchy-niri-watch
+591 niri msg --json event-stream
+592 /bin/bash /var/lib/omarchy-niri/runtimes/8ff97d9241174799a0aea8d127e164a3/bin/omarchy-niri-watch
+988 /usr/bin/niri msg --json event-stream
+595 quickshell -n -p /var/lib/omarchy-niri/runtimes/8ff97d9241174799a0aea8d127e164a3/shell

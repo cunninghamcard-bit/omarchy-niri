@@ -1,7 +1,9 @@
 # Acceptance — Omarchy Niri
 
-Test date: 2026-09-11. Graphical evidence was captured on 0.1.0, before the
-overlay-based installer; the desktop payload it exercised is unchanged.
+Test date: 2026-09-11. The graphical evidence in this document is historical
+0.1.0 evidence, captured before the current complete-runtime manager. It
+describes the desktop payload and cannot certify the current installer,
+upgrade path, or current directional-binding revision.
 This is an independently installable replacement layer;
 its scope is the existing Omarchy 4.0.2 desktop and first-party shell services.
 It is not a claim of compatibility with every third-party Hyprland plugin or
@@ -30,9 +32,9 @@ with arbitrary future Omarchy versions.
   publication rollback, edited-file preservation, safe uninstall preflight and recovery after interrupted update publication.
 - 11 JavaScript assertions: workspace IDs/output filtering, focus, window
   occupancy, keyboard layout events, unknown events and reconnect snapshots.
-- Initial payload inventory, all 87 SHA-256 checks, and Bash syntax passed.
-  Version 0.2.0 stores 65 complete files and 22 patches, producing the same 87
-  managed paths.
+- Historical 0.2.0 payload inventory, 87 SHA-256 checks, and Bash syntax passed.
+  Those managed-file counts belong to the superseded installer and are not a
+  current runtime or upgrade guarantee.
 - Two independent acceptance agents reviewed compositor/shell contracts and
   installer failure paths. Their findings were fixed and rechecked.
 - CI repeats the portable checks; CI alone does not prove a graphical session.

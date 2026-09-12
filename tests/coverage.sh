@@ -1,19 +1,23 @@
 #!/bin/bash
-# List upstream files that talk to Hyprland and are neither replaced nor patched.
-# Early warning when a new Omarchy release adds a compositor call we do not cover.
+# Build the same complete candidate used by install/update and scan its final
+# contents. A grep over the repository can pass while a patch leaves a call in
+# the materialized runtime, so compatibility checking belongs in compat.py.
 set -euo pipefail
 upstream=${1:?usage: coverage.sh <omarchy checkout>}
 here=$(cd "$(dirname "$0")/.." && pwd)
-# Hyprland-only trees and files whose only hit is prose.
-ignore='^(default/hypr/|config/hypr/|default/agents/|default/voxtype/|bin/omarchy-upgrade-to-quattro$|shell/plugins/bar/widgets/KeyboardLayoutModel\.js$)'
-covered() { [[ -e $here/overlay/$1 || -e $here/patches/$1.patch ]]; }
-status=0
-# "hyprctl" as a command (not omarchy-restart-hyprctl), or the Quickshell Hyprland module.
-for file in $(grep -rl -I -E '(^|[^[:alnum:]_-])hyprctl\b|Quickshell\.Hyprland|\bHyprland\.[a-z]' "$upstream"/{bin,shell,default,config} | sort); do
-  rel=${file#"$upstream/"}
-  [[ $rel =~ $ignore ]] && continue
-  covered "$rel" && continue
-  echo "uncovered: $rel"
-  status=1
-done
-exit $status
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}" python3 - "$upstream" "$here" "$tmp/runtime" <<'PY'
+import sys
+from pathlib import Path
+from compat import prepare
+
+base, source, destination = map(Path, sys.argv[1:])
+try:
+    report = prepare(base, destination, source)
+except Exception as error:
+    print(f"compatibility check failed: {error}", file=sys.stderr)
+    raise SystemExit(1)
+print(f"compatibility ok: {report['patches']} patches; runtime={destination}")
+PY

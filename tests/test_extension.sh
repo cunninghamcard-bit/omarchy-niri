@@ -1,25 +1,25 @@
 #!/bin/bash
-# Smallest check that fails if rebuild breaks: a patch lands on a copy of the
-# base file (materialized through the package's symlink) and the base is untouched.
+# Local, unprivileged smoke checks for the plugin entry point and manager CLI.
+# Real system installation is covered separately on an Omarchy host; this test
+# must never write /etc, /usr, or the user's runtime state.
 set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
-tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/base/bin" "$tmp/prefix/patches/bin" "$tmp/state"
-printf '#!/bin/bash\necho hyprland\n' >"$tmp/real-command"
-ln -s "$tmp/real-command" "$tmp/base/bin/example"
-cp "$here/omarchy-niri-extension" "$tmp/prefix/"
-cat >"$tmp/prefix/patches/bin/example.patch" <<'PATCH'
---- a/bin/example
-+++ b/bin/example
-@@ -1,2 +1,2 @@
- #!/bin/bash
--echo hyprland
-+echo niri
-PATCH
-export OMARCHY_NIRI_PREFIX=$tmp/prefix OMARCHY_NIRI_STATE=$tmp/state OMARCHY_NIRI_BASE=$tmp/base OMARCHY_NIRI_NO_MOUNT=1
-"$tmp/prefix/omarchy-niri-extension" rebuild
-[[ $(cat "$tmp/state/patched/bin/example") == $'#!/bin/bash\necho niri' ]] || { echo "FAIL: patch not applied"; exit 1; }
-[[ ! -L $tmp/state/patched/bin/example ]] || { echo "FAIL: symlink not materialized"; exit 1; }
-[[ $(cat "$tmp/real-command") == $'#!/bin/bash\necho hyprland' ]] || { echo "FAIL: base modified"; exit 1; }
-[[ ! -e $tmp/state/rebuild-failed ]] || { echo "FAIL: spurious failure record"; exit 1; }
-echo "ok: rebuild applies patches onto a copy of the base"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+manifest=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["entryPoints"]["service"])' "$here/manifest.json")
+[[ "$manifest" == "plugin/Service.qml" ]] || { echo "FAIL: service entry point" >&2; exit 1; }
+rg -q 'command: \["bash", extension, "notify"\]' "$here/plugin/Service.qml" || {
+  echo "FAIL: service does not invoke notify" >&2
+  exit 1
+}
+
+state="$tmp/state"
+out=$(OMARCHY_NIRI_STATE="$state" python3 "$here/manage.py" status)
+[[ "$out" == "Niri extension is not installed." ]] || {
+  echo "FAIL: unexpected status output: $out" >&2
+  exit 1
+}
+
+python3 "$here/manage.py" --help >/dev/null
+echo "ok: plugin service and unprivileged manager smoke checks"
