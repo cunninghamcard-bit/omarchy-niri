@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+"""Show upstream drift against compatibility.json and accept it after review."""
+import argparse, hashlib, json, subprocess, sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parents[1]
+
+
+def _hash(p: Path) -> str:
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""): h.update(chunk)
+    return h.hexdigest()
+
+
+def drift(spec: dict, checkout: Path) -> list:
+    """The same drift list compat.prepare() records, without building a runtime."""
+    replacements, bindings = spec.get("replacements", {}), spec.get("bindings", {})
+    entries = []
+    actual_bindings = {p.relative_to(checkout).as_posix() for p in (checkout / "default/hypr/bindings").glob("*.lua")}
+    for rel in sorted(actual_bindings ^ set(bindings)):
+        entries.append({"path": rel, "kind": "bindings", "accepted": [],
+                        "actual": _hash(checkout / rel) if rel in actual_bindings else None})
+    for rel, expected in sorted({**replacements, **bindings}.items()):
+        p = checkout / rel
+        accepted = [expected] if isinstance(expected, str) else expected
+        if not p.is_file():
+            if rel in replacements:  # prepare() rejects this; it needs a manual port, not an accept
+                entries.append({"path": rel, "kind": "replacement", "accepted": accepted, "actual": None})
+            continue  # removed binding file; recorded above
+        actual = _hash(p)
+        if actual not in accepted:
+            entries.append({"path": rel, "kind": "replacement" if rel in replacements else "bindings",
+                            "accepted": accepted, "actual": actual})
+    return entries
+
+
+def show(checkout: Path, reviewed: str, entry: dict) -> None:
+    print(f"== {entry['path']} ({entry['kind']})")
+    print(f"accepted: {', '.join(entry['accepted']) or '(none)'}")
+    print(f"actual:   {entry['actual'] or '(file missing upstream)'}")
+    if entry["actual"] is None:
+        print("upstream removed this file; prepare() rejects it — port or drop it manually\n")
+        return
+    result = subprocess.run(["git", "-C", str(checkout), "diff", "--no-ext-diff", reviewed, "--", entry["path"]],
+                            text=True, capture_output=True)
+    if result.returncode:
+        print(f"(diff unavailable: {result.stderr.strip()})\n")
+    else:
+        print(result.stdout.rstrip() or "(no committed diff; the change is only in the working tree)")
+        print()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Print the upstream diff and accepted hashes for every drifted file.",
+        epilog="--accept appends the current hash to a file's accepted list in the manifest. "
+               "Accepting is a deliberate human step: run it only after reading the diff above, "
+               "and update the Niri adapter itself when the upstream change is not just cosmetic.")
+    parser.add_argument("checkout", type=Path, help="upstream Omarchy checkout to compare")
+    parser.add_argument("--manifest", type=Path, default=HERE / "compatibility.json",
+                        help="compatibility.json to read and update (default: this repository's)")
+    parser.add_argument("--accept", nargs="*", metavar="PATH", default=None,
+                        help="accept drifted files (all of them when no PATH is given)")
+    args = parser.parse_args()
+    spec = json.loads(args.manifest.read_text())
+    entries = drift(spec, args.checkout)
+    if not entries:
+        print("no drift: every reviewed file matches the checkout")
+        return 0
+    for entry in entries:
+        show(args.checkout, spec["base"], entry)
+    if args.accept is None:
+        print(f"{len(entries)} drifted file(s); rerun with --accept [PATH ...] after reviewing the diffs above")
+        return 0
+    failures = 0
+    for entry in entries:
+        if args.accept and entry["path"] not in args.accept: continue
+        if entry["actual"] is None:
+            print(f"refusing {entry['path']}: no upstream file to accept", file=sys.stderr); failures += 1; continue
+        section = "replacements" if entry["kind"] == "replacement" else "bindings"
+        current = spec[section].get(entry["path"])
+        accepted = [current] if isinstance(current, str) else (current or [])
+        if entry["actual"] not in accepted: accepted.append(entry["actual"])
+        spec[section][entry["path"]] = accepted[0] if len(accepted) == 1 else accepted
+        print(f"accepted {entry['actual']} for {entry['path']}")
+    for wanted in args.accept:
+        if wanted not in {e["path"] for e in entries}:
+            print(f"no drift for {wanted}", file=sys.stderr); failures += 1
+    if not failures:
+        args.manifest.write_text(json.dumps(spec, indent=2) + "\n")
+        print(f"wrote {args.manifest}")
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

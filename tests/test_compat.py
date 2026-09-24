@@ -1,4 +1,4 @@
-import json, os, shutil, subprocess, tempfile, unittest
+import hashlib, json, os, shutil, subprocess, sys, tempfile, unittest
 from pathlib import Path
 from compat import prepare
 
@@ -37,14 +37,31 @@ class CompatTests(unittest.TestCase):
             report = prepare(source, Path(d) / 'runtime', root)
             self.assertEqual(report['reviewed_base'], '346e69e1cec6c4e8924531874af6ba010a1bc99e')
 
-    def test_drift_rejects(self):
+    def test_replacement_drift_warns(self):
         with tempfile.TemporaryDirectory() as d:
-            p=Path(d); base=p/"base"; (base/"bin").mkdir(parents=True)
-            for x in ("shell", "default", "config"): (base/x).mkdir()
-            (base/"bin/tool").write_text("changed")
-            source=p/"source"; (source/"patches").mkdir(parents=True); (source/"overlay/bin").mkdir(parents=True)
-            (source/"compatibility.json").write_text(json.dumps({"base":"x","patches":[],"replacements":{"bin/tool":"wrong"}}))
-            with self.assertRaisesRegex(ValueError, "Omarchy changed"): prepare(base,p/"out",source)
+            p=Path(d); base,source=self.fixture(p)
+            (base/"bin/replacement").write_text("echo drifted\n")
+            report=prepare(base,p/"out",source)
+            self.assertEqual(report["drift"],[{"path":"bin/replacement","kind":"replacement",
+                "accepted":[hashlib.sha256(b"echo original replacement\n").hexdigest()],
+                "actual":hashlib.sha256(b"echo drifted\n").hexdigest()}])
+
+    def test_missing_replacement_target_rejects(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p); (base/"bin/replacement").unlink()
+            with self.assertRaisesRegex(ValueError, "Omarchy removed reviewed files"): prepare(base,p/"out",source)
+
+    def test_bindings_drift_warns(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p)
+            binding=base/"default/hypr/bindings/tiling.lua"
+            binding.parent.mkdir(parents=True); binding.write_text("bind\n")
+            spec=json.loads((source/"compatibility.json").read_text())
+            spec["bindings"]={"default/hypr/bindings/tiling.lua":"wrong"}
+            (source/"compatibility.json").write_text(json.dumps(spec))
+            report=prepare(base,p/"out",source)
+            self.assertEqual(report["drift"],[{"path":"default/hypr/bindings/tiling.lua","kind":"bindings",
+                "accepted":["wrong"],"actual":hashlib.sha256(b"bind\n").hexdigest()}])
 
     def test_missing_tree_rejects(self):
         with tempfile.TemporaryDirectory() as d:
@@ -104,14 +121,28 @@ class CompatTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'Reviewed replacements missing'):
                 prepare(base,p/'out',source)
 
-    def test_new_upstream_binding_file_needs_review(self):
+    def test_new_upstream_binding_file_warns(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d); base,source=self.fixture(p)
             binding=base/'default/hypr/bindings/new.lua'
             binding.parent.mkdir(parents=True)
             binding.write_text('new shortcut')
-            with self.assertRaisesRegex(ValueError, 'Window bindings changed'):
-                prepare(base,p/'out',source)
+            report=prepare(base,p/'out',source)
+            self.assertEqual(report['drift'],[{'path':'default/hypr/bindings/new.lua','kind':'bindings',
+                'accepted':[],'actual':hashlib.sha256(b'new shortcut').hexdigest()}])
+
+    def test_removed_upstream_binding_file_warns(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p)
+            binding=base/'default/hypr/bindings/tiling.lua'
+            binding.parent.mkdir(parents=True); binding.write_text('bind\n')
+            spec=json.loads((source/'compatibility.json').read_text())
+            spec['bindings']={'default/hypr/bindings/tiling.lua':'stale'}
+            (source/'compatibility.json').write_text(json.dumps(spec))
+            binding.unlink()
+            report=prepare(base,p/'out',source)
+            self.assertEqual(report['drift'],[{'path':'default/hypr/bindings/tiling.lua','kind':'bindings',
+                'accepted':[],'actual':None}])
 
     def test_unrelated_upstream_change_is_allowed(self):
         with tempfile.TemporaryDirectory() as d:
@@ -127,5 +158,29 @@ class CompatTests(unittest.TestCase):
             self.assertFalse((p/'out/bin/link').is_symlink()); self.assertEqual((p/'out/bin/link').read_text(),'real')
             (base/'bin/real').write_text('package-updated')
             self.assertEqual((p/'out/bin/link').read_text(), 'real')
+
+    def test_review_drift_accept_round_trip(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p)
+            subprocess.run(['git','init','-q'],cwd=base,check=True)
+            subprocess.run(['git','add','bin','shell','default','config'],cwd=base,check=True)
+            subprocess.run(['git','-c','user.name=t','-c','user.email=t@example.invalid','commit','-qm','base'],cwd=base,check=True)
+            sha=subprocess.run(['git','rev-parse','HEAD'],cwd=base,capture_output=True,text=True,check=True).stdout.strip()
+            spec=json.loads((source/'compatibility.json').read_text()); spec['base']=sha
+            manifest=p/'compatibility.json'; manifest.write_text(json.dumps(spec))
+            (base/'bin/replacement').write_text('echo drifted\n')
+            script=[sys.executable,str(Path(__file__).resolve().parents[1]/'tools/review-drift')]
+            listing=subprocess.run(script+[str(base),'--manifest',str(manifest)],capture_output=True,text=True)
+            self.assertEqual(listing.returncode,0,listing.stderr)
+            self.assertIn('bin/replacement',listing.stdout)
+            self.assertIn(hashlib.sha256(b'echo original replacement\n').hexdigest(),listing.stdout)
+            accepting=subprocess.run(script+[str(base),'--manifest',str(manifest),'--accept'],capture_output=True,text=True)
+            self.assertEqual(accepting.returncode,0,accepting.stderr)
+            spec=json.loads(manifest.read_text())
+            self.assertEqual(spec['replacements']['bin/replacement'],
+                             [hashlib.sha256(b'echo original replacement\n').hexdigest(),
+                              hashlib.sha256(b'echo drifted\n').hexdigest()])
+            (source/'compatibility.json').write_text(json.dumps(spec))
+            self.assertEqual(prepare(base,p/'out',source)['drift'],[])
 
 if __name__ == "__main__": unittest.main()
