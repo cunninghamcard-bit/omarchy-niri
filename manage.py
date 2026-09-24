@@ -288,14 +288,29 @@ def migrate_config(text):
     return ''.join(result) if replaced else None
 
 
-def sync(home):
+def sync(home, force=False):
     """User-level step that owns every Niri config write in the home directory."""
     if os.geteuid() == 0:
         raise ValueError('Run sync as the desktop user; it must not create root-owned files.')
+    info = release()
+    if not force and not (info and info.get('user') == pwd.getpwuid(os.geteuid()).pw_name):
+        return  # Enabling the plugin alone must not touch an existing Niri setup.
+    previous = []  # (path, content before this sync), rolled back on any failure
+    try:
+        _sync(home, previous)
+    except BaseException:
+        for path, text in reversed(previous):
+            if text is None:
+                path.unlink(missing_ok=True)
+            else:
+                atomic(path, text, 0o644)
+        raise
+
+
+def _sync(home, previous):
     niri = home / '.config/niri'
     (niri / 'omarchy').mkdir(parents=True, exist_ok=True)
     (home / '.config/omarchy').mkdir(parents=True, exist_ok=True)
-    previous = []  # (path, content before this sync) rolled back when validation fails
 
     def write(path, text):
         if not (path.exists() and path.read_text() == text):
@@ -330,11 +345,6 @@ def sync(home):
         result = subprocess.run(['niri', 'validate'], env={**os.environ, 'HOME': str(home)},
                                 capture_output=True, text=True)
         if result.returncode != 0:
-            for path, text in reversed(previous):
-                if text is None:
-                    path.unlink(missing_ok=True)
-                else:
-                    atomic(path, text, 0o644)
             raise ValueError('Niri rejected the configuration: '
                              + (result.stderr.strip() or result.stdout.strip()))
 
@@ -485,7 +495,7 @@ def activate(user, base, previous, dependencies=False, autologin=False):
         configure_system(runtime, changes, autologin)
         migrate_user_ledger(user)
         # Every home write belongs to the unprivileged sync step, run as the desktop user.
-        as_user(user, runtime, ['python3', str(runtime / '.extension/manage.py'), 'sync'])
+        as_user(user, runtime, ['python3', str(runtime / '.extension/manage.py'), 'sync', '--force'])
         validate_user(user, runtime)
         switch(runtime)
     except BaseException:
@@ -602,6 +612,8 @@ def main():
     parser.add_argument('--user', default=os.environ.get('SUDO_USER'))
     parser.add_argument('--base', type=Path, default=BASE)
     parser.add_argument('--skip-packages', action='store_true')
+    parser.add_argument('--force', action='store_true',
+                        help='sync before the runtime is published (used by install and update)')
     parser.add_argument('--autologin', action='store_true',
                         help='write the SDDM autologin selection (kept by later updates)')
     args = parser.parse_args()
@@ -610,7 +622,7 @@ def main():
     if args.action == 'notify':
         notify(); return 0
     if args.action == 'sync':
-        sync(Path.home()); return 0
+        sync(Path.home(), args.force); return 0
     if args.action == 'unsync':
         unsync(Path.home()); return 0
     if os.geteuid() != 0:

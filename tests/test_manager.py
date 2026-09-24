@@ -54,7 +54,7 @@ class ManagerTests(unittest.TestCase):
         return {"base": "test"}
 
     def user_commands(self, name):
-        return [call.args[2] for call in manage.as_user.call_args_list if call.args[2][-1] == name]
+        return [call.args[2] for call in manage.as_user.call_args_list if name in call.args[2]]
 
     def sourced(self, conf, desktop=None):
         """What a plain shell resolves OMARCHY_PATH to after sourcing the conf."""
@@ -499,7 +499,7 @@ class SyncTests(unittest.TestCase):
 
     def test_sync_creates_the_block_and_defaults(self):
         self.tool('niri', 'exit 0')
-        manage.sync(self.home)
+        manage.sync(self.home, force=True)
         self.assertEqual((self.home / '.config/niri/config.kdl').read_text(), manage.block() + '\n')
         for name in ('config.kdl', 'window-management.kdl'):
             self.assertEqual((self.home / '.config/niri/omarchy' / name).read_text(),
@@ -518,11 +518,11 @@ class SyncTests(unittest.TestCase):
         config = self.home / '.config/niri/config.kdl'
         config.parent.mkdir(parents=True, exist_ok=True)
         config.write_text('layout { gaps 20 }\n')
-        manage.sync(self.home)
+        manage.sync(self.home, force=True)
         self.assertEqual(config.read_text(), manage.block() + '\n\nlayout { gaps 20 }\n')
         self.assertEqual(config.with_name('config.kdl.pre-omarchy-niri').read_text(), 'layout { gaps 20 }\n')
         before = self.snapshots()
-        manage.sync(self.home)  # a second run with unchanged sources rewrites nothing
+        manage.sync(self.home, force=True)  # a second run with unchanged sources rewrites nothing
         self.assertEqual(self.snapshots(), before)
 
     def test_sync_migrates_the_03_absolute_includes(self):
@@ -534,7 +534,7 @@ class SyncTests(unittest.TestCase):
                           'include "/var/lib/omarchy-niri/current/default/niri/window-management.kdl"\n'
                           'include optional=true "~/.config/niri/omarchy-theme.kdl"\n'
                           'layout { gaps 20 }\n')
-        manage.sync(self.home)
+        manage.sync(self.home, force=True)
         self.assertEqual(config.read_text(),
                          '// managed header\n' + manage.block() + '\n'
                          'include optional=true "~/.config/niri/omarchy-theme.kdl"\n'
@@ -547,7 +547,7 @@ class SyncTests(unittest.TestCase):
         config.write_text('include ~/.config/niri/omarchy.kdl\n'
                           'include ~/.config/niri/window-management.kdl\n'
                           'layout { gaps 20 }\n')
-        manage.sync(self.home)
+        manage.sync(self.home, force=True)
         self.assertEqual(config.read_text(), manage.block() + '\nlayout { gaps 20 }\n')
 
     def test_sync_rolls_back_when_niri_rejects_the_config(self):
@@ -559,11 +559,30 @@ class SyncTests(unittest.TestCase):
         managed.parent.mkdir(parents=True)
         managed.write_text('old defaults\n')
         with self.assertRaisesRegex(ValueError, 'config error'):
-            manage.sync(self.home)
+            manage.sync(self.home, force=True)
         self.assertEqual(config.read_text(), 'layout { gaps 20 }\n')
         self.assertEqual(managed.read_text(), 'old defaults\n')
         self.assertFalse((self.home / '.config/niri/input.kdl').exists())
         self.assertFalse((self.home / '.config/niri/omarchy/.version').exists())
+
+    def test_sync_leaves_home_alone_until_installed(self):
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True)
+        config.write_text('layout { gaps 20 }\n')
+        with mock.patch.object(manage, 'release', return_value=None):
+            manage.sync(self.home)
+        self.assertEqual(config.read_text(), 'layout { gaps 20 }\n')
+        self.assertEqual(sorted(p.name for p in config.parent.iterdir()), ['config.kdl'])
+
+    def test_sync_rolls_back_when_the_theme_step_fails(self):
+        self.tool('omarchy-niri', 'exit 1')
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True)
+        config.write_text('layout { gaps 20 }\n')
+        with self.assertRaises(subprocess.CalledProcessError):
+            manage.sync(self.home, force=True)
+        self.assertEqual(config.read_text(), 'layout { gaps 20 }\n')
+        self.assertFalse((self.home / '.config/niri/input.kdl').exists())
 
     def test_unsync_strips_only_the_block(self):
         config = self.home / '.config/niri/config.kdl'

@@ -39,12 +39,14 @@ for path in sorted(p for p in home.rglob('*') if p.is_file()):
 PY
 }
 HOME="$home" PATH="$tmp/bin:$PATH" python3 "$here/manage.py" sync
+[[ ! -e "$home/.config/niri" ]] || { echo "FAIL: sync touched Niri config before installation" >&2; exit 1; }
+HOME="$home" PATH="$tmp/bin:$PATH" python3 "$here/manage.py" sync --force
 [[ -f "$home/.config/niri/config.kdl" && -f "$home/.config/niri/omarchy/config.kdl" ]] || {
   echo "FAIL: sync did not create the Niri config" >&2
   exit 1
 }
 before=$(snapshot)
-HOME="$home" PATH="$tmp/bin:$PATH" python3 "$here/manage.py" sync
+HOME="$home" PATH="$tmp/bin:$PATH" python3 "$here/manage.py" sync --force
 after=$(snapshot)
 [[ "$before" == "$after" ]] || { echo "FAIL: second sync rewrote files" >&2; exit 1; }
 HOME="$home" PATH="$tmp/bin:$PATH" python3 "$here/manage.py" unsync
