@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import redirect_stdout
 from unittest import mock
 
 import manage
@@ -268,6 +270,66 @@ class ManagerTests(unittest.TestCase):
             first.wait(timeout=5)
             first.stdout.close()
             first.stderr.close()
+
+
+class DriftReportTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(os.path.realpath(self.tmp.name))
+        self.state = root / "state"
+        self.log = root / "notifications.log"
+        self.seen = root / "drift-seen"
+        self.bin = root / "bin"
+        self.bin.mkdir()
+        (self.bin / "omarchy-notification-send").write_text('#!/bin/sh\necho "$@" >> "$NOTIFY_LOG"\n')
+        (self.bin / "omarchy-notification-send").chmod(0o755)
+        version = json.loads((manage.HERE / "manifest.json").read_text())["version"]
+        self.write_release([{"path": "bin/omarchy-capture-screenshot", "kind": "replacement",
+                              "accepted": ["a" * 64], "actual": "b" * 64},
+                             {"path": "default/hypr/bindings/tiling.lua", "kind": "bindings",
+                              "accepted": ["c" * 64], "actual": "d" * 64}], version)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def write_release(self, drift, version):
+        extension = self.state / "current/.extension"
+        extension.mkdir(parents=True, exist_ok=True)
+        (extension / "release.json").write_text(json.dumps(
+            {"user": "tester", "version": version, "compatibility": {"drift": drift}}))
+
+    def notify(self):
+        env = {**os.environ, "PATH": str(self.bin) + os.pathsep + os.environ["PATH"],
+               "NOTIFY_LOG": str(self.log)}
+        with mock.patch.object(manage, "STATE", self.state), \
+                mock.patch.object(manage, "DRIFT_SEEN", self.seen), mock.patch.dict(os.environ, env):
+            manage.notify()
+
+    def test_status_lists_drift_and_exits_zero(self):
+        out = io.StringIO()
+        with mock.patch.object(manage, "STATE", self.state), redirect_stdout(out):
+            self.assertEqual(manage.status(), 0)
+        self.assertIn("Upstream changed; running reviewed Niri replacement for: "
+                      "bin/omarchy-capture-screenshot, default/hypr/bindings/tiling.lua", out.getvalue())
+
+    def test_notify_sends_once_per_drift_set(self):
+        for _ in range(2):
+            self.notify()
+        lines = self.log.read_text().splitlines()
+        self.assertEqual(len(lines), 1)
+        self.assertIn("bin/omarchy-capture-screenshot", lines[0])
+        self.assertIn("default/hypr/bindings/tiling.lua", lines[0])
+        version = json.loads((manage.HERE / "manifest.json").read_text())["version"]
+        self.write_release([{"path": "bin/omarchy-capture-screenshot", "kind": "replacement",
+                              "accepted": ["a" * 64], "actual": "e" * 64}], version)
+        self.notify()
+        self.assertEqual(len(self.log.read_text().splitlines()), 2)
+
+    def test_notify_stays_quiet_without_drift(self):
+        version = json.loads((manage.HERE / "manifest.json").read_text())["version"]
+        self.write_release([], version)
+        self.notify()
+        self.assertFalse(self.log.exists())
 
 
 if __name__ == "__main__":
