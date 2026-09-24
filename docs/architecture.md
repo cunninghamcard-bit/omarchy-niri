@@ -74,13 +74,17 @@ to the compositor: `hyprctl` callers in `bin/`, `Quickshell.Hyprland` users in
 | Change upstream | Mechanical effect | Where it shows |
 | --- | --- | --- |
 | Edits a file we patch | The patch must still apply, and the final file is scanned for remaining compositor calls | prepare output, `status`, CI compatibility check |
-| Edits a file we replace | An unreviewed source hash rejects the candidate | Manual review of the upstream diff, then update the accepted hashes |
+| Edits a file we replace | The candidate still builds with the reviewed replacement; the drift is recorded in the release report | `status`, one desktop notification, `tools/review-drift` |
 | Adds a compositor call in a file we do not cover | Candidate preparation fails before publication | `compat.prepare`, run on the pinned base and weekly upstream main |
 
-Keybindings, menu entries and the Niri config are ported by hand. Changes or
-additions in `default/hypr/bindings/*.lua` also stop candidate publication, so
-new Omarchy shortcuts cannot silently diverge from the Niri defaults. Review
-that diff and preserve the eight user-selected directional bindings.
+A replacement whose upstream file disappeared still fails preparation: the
+interface it adapts has changed shape, which needs a port, not a warning.
+
+Keybindings, menu entries and the Niri config are ported by hand. Hash changes
+and added or removed files in `default/hypr/bindings/*.lua` are recorded as
+drift in the same report, so new Omarchy shortcuts cannot silently diverge from
+the Niri defaults. Review that diff and preserve the eight user-selected
+directional bindings.
 
 ## Distributed as an Omarchy plugin
 
@@ -103,11 +107,15 @@ party files that need a Niri singleton (Bar.qml, idle) can only reach it through
 ## Following upstream
 
 Every push checks the reviewed base. A weekly job also prepares against Omarchy
-main and fails visibly on drift; its artifact contains the check output and the
-full diff from the reviewed commit. Maintainers review the changed source, update
-the affected adapter or patch, and accept replacement hashes only after that
-review. Run the portable checks plus an Omarchy VM session before releasing a
-new plugin version. Merely updating the hash is not an adaptation.
+main; drift alone passes that job, while its artifact still records the drift
+list and the full diff from the reviewed commit. Hard failures — a rejected
+patch, a disappeared replacement, a new compositor call — keep it red.
+Maintainers review the changed source with `tools/review-drift <checkout>`,
+which prints the upstream diff and the accepted hashes, and accept a hash only
+after that review with `tools/review-drift --accept`. Update the affected
+adapter or patch when the change is more than cosmetic; accepting a hash is not
+an adaptation. Run the portable checks plus an Omarchy VM session before
+releasing a new plugin version.
 
 These checks detect known source interfaces; they are not proof of arbitrary
 future behavioral compatibility. Niri and Quickshell/Qt binaries are still
