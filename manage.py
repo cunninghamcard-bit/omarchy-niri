@@ -26,6 +26,7 @@ SYSTEM = Path('/')
 DEPENDENCIES = ('niri', 'xwayland-satellite', 'xdg-desktop-portal-gnome',
                 'xdg-desktop-portal-gtk', 'wf-recorder', 'gammastep', 'wl-mirror',
                 'python', 'git', 'jq', 'slurp', 'grim', 'wl-clipboard')
+MARKER = '# Managed by omarchy-niri'
 
 
 def system(path):
@@ -111,32 +112,49 @@ class Changes:
         os.replace(temporary, path)
         self.record(path)
 
+    def _settle(self, key, item):
+        path = Path(key)
+        actual = digest(path)
+        if actual == item['before']:
+            if actual is not None:
+                if not path.is_symlink():
+                    path.chmod(item['mode'])
+                os.chown(path, item['uid'], item['gid'], follow_symlinks=False)
+            return
+        if actual not in (None, item.get('after')):
+            saved = self.directory / 'preserved' / uuid.uuid4().hex / key.lstrip('/')
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, saved, follow_symlinks=False)
+        path.unlink(missing_ok=True)
+        if item['before'] is not None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(self.directory / 'backups' / key.lstrip('/'), path, follow_symlinks=False)
+            os.chown(path, item['uid'], item['gid'], follow_symlinks=False)
+
+    def _preflight(self, key, item):
+        digest(Path(key))
+        if item['before'] is not None:
+            backup = self.directory / 'backups' / key.lstrip('/')
+            if digest(backup) != item['before']:
+                raise ValueError('Original backup is missing or changed: ' + key)
+
     def restore(self):
         # Preflight every path before changing anything: a directory is not an editable file.
         for key, item in self.items.items():
-            digest(Path(key))
-            if item['before'] is not None:
-                backup = self.directory / 'backups' / key.lstrip('/')
-                if digest(backup) != item['before']:
-                    raise ValueError('Original backup is missing or changed: ' + key)
+            self._preflight(key, item)
         for key, item in reversed(list(self.items.items())):
-            path = Path(key)
-            actual = digest(path)
-            if actual == item['before']:
-                if actual is not None:
-                    if not path.is_symlink():
-                        path.chmod(item['mode'])
-                    os.chown(path, item['uid'], item['gid'], follow_symlinks=False)
-                continue
-            if actual not in (None, item.get('after')):
-                saved = self.directory / 'preserved' / uuid.uuid4().hex / key.lstrip('/')
-                saved.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(path, saved, follow_symlinks=False)
-            path.unlink(missing_ok=True)
-            if item['before'] is not None:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(self.directory / 'backups' / key.lstrip('/'), path, follow_symlinks=False)
-                os.chown(path, item['uid'], item['gid'], follow_symlinks=False)
+            self._settle(key, item)
+
+    def release(self, path):
+        """Stop managing one path the way uninstall restores it, then drop it from the ledger."""
+        key = str(path)
+        item = self.items.get(key)
+        if item is None:
+            return
+        self._preflight(key, item)
+        self._settle(key, item)
+        del self.items[key]
+        self.flush()
 
 
 class Transaction:
@@ -168,6 +186,18 @@ class Transaction:
     def record(self, path):
         self.operation.record(path)
         self.original.record(path)
+
+    def release(self, path):
+        self.original.release(path)
+        self.operation.release(path)
+
+    def adopt(self, path):
+        """Accept a machine-generated rewrite (omarchy dev link) as managed state again."""
+        for ledger in (self.original, self.operation):
+            item = ledger.items.get(str(path))
+            if item and digest(path) not in (item['before'], item.get('after', item['before'])):
+                item['after'] = digest(path)
+                ledger.flush()
 
 
 def release():
@@ -255,24 +285,59 @@ def configure_user(user, runtime, changes):
     changes.record(theme)
 
 
-def configure_system(runtime, changes):
-    quote = shlex.quote(str(STATE / 'current'))
-    changes.write(system('/etc/omarchy.conf'), 'export OMARCHY_PATH="$(readlink -f ' + quote + ')"\n')
-    sudoers = 'Defaults secure_path="' + str(STATE / 'current/bin') + ':/usr/local/sbin:/usr/local/bin:/usr/bin"\n'
-    with tempfile.NamedTemporaryFile(mode='w') as stream:
-        stream.write(sudoers); stream.flush()
-        run('visudo', '-cf', stream.name)
-    changes.write(system('/etc/sudoers.d/omarchy-dev-path'), sudoers, 0o440)
+def sourced(conf):
+    """The OMARCHY_PATH a conf file yields to a plain shell, outside any session."""
+    result = subprocess.run(['bash', '-c',
+                             'unset XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP; . "$1"; printf %s "$OMARCHY_PATH"',
+                             'bash', str(conf)], capture_output=True, text=True)
+    return result.stdout.strip() or None
+
+
+def session_conf(default):
+    """Only the Niri session points OMARCHY_PATH at the private runtime."""
+    current = shlex.quote(str(STATE / 'current'))
+    return (MARKER + '. Only the Niri session uses the private runtime.\n'
+            'OMARCHY_PATH=' + shlex.quote(default) + '\n'
+            'case ":${XDG_CURRENT_DESKTOP:-}:${XDG_SESSION_DESKTOP:-}:" in\n'
+            '  *:niri:*) [ -d ' + current + ' ] && OMARCHY_PATH="$(readlink -f ' + current + ')" ;;\n'
+            'esac\n'
+            'export OMARCHY_PATH\n')
+
+
+def non_niri_default(changes, conf):
+    """The OMARCHY_PATH non-Niri sessions keep: the pre-install value, or an adopted dev link."""
+    item = changes.original.items.get(str(conf))
+    if conf.exists() and (MARKER in conf.read_text() or not item
+                          or digest(conf) != item.get('after', item['before'])):
+        return sourced(conf) or str(BASE)
+    if item and item['before'] is not None:
+        return sourced(changes.original.directory / 'backups' / str(conf).lstrip('/')) or str(BASE)
+    return str(BASE)
+
+
+def configure_system(runtime, changes, autologin=False):
+    conf = system('/etc/omarchy.conf')
+    default = non_niri_default(changes, conf)
+    if not conf.exists() or MARKER not in conf.read_text():
+        # omarchy dev link/unlink rewrote or removed this machine-generated file; take it back.
+        changes.adopt(conf)
+    changes.write(conf, session_conf(default))
+    changes.release(system('/etc/sudoers.d/omarchy-dev-path'))
     desktop = (runtime / 'default/wayland-sessions/omarchy-niri.desktop').read_text()
-    for name in ('omarchy', 'omarchy-niri'):
-        changes.write(system('/usr/local/share/wayland-sessions/' + name + '.desktop'), desktop)
-    changes.write(system('/etc/sddm.conf.d/90-omarchy-niri.conf'), '[Autologin]\nSession=omarchy-niri.desktop\n')
+    changes.write(system('/usr/local/share/wayland-sessions/omarchy-niri.desktop'), desktop)
+    changes.release(system('/usr/local/share/wayland-sessions/omarchy.desktop'))
+    autologin_file = system('/etc/sddm.conf.d/90-omarchy-niri.conf')
+    if autologin:
+        changes.write(autologin_file, '[Autologin]\nSession=omarchy-niri.desktop\n')
+    else:
+        changes.release(autologin_file)
     # During a 0.2 migration the old manager remains available until the single pointer commits.
     wrapper = '#!/bin/bash\nmanager="$(readlink -f ' + shlex.quote(str(STATE / 'current/.extension/manage.py')) + ')"\n'
     wrapper += '[[ -f $manager ]] || manager=' + shlex.quote(str(PREFIX / 'manage.py')) + '\nexec python3 "$manager" "$@"\n'
     changes.write(system('/usr/local/bin/omarchy-niri-extension'), wrapper, 0o755)
+    # The unmasked hooks run /usr/bin/omarchy-hyprland-reload-guard, a no-op without a running Hyprland.
     for name in ('10-omarchy-hyprland-reload-pause.hook', '90-omarchy-hyprland-reload-resume.hook'):
-        changes.link(system('/etc/pacman.d/hooks/' + name), '/dev/null')
+        changes.release(system('/etc/pacman.d/hooks/' + name))
     changes.write(system('/etc/pacman.d/hooks/95-omarchy-niri.hook'), '''[Trigger]
 Operation = Upgrade
 Type = Package
@@ -291,7 +356,7 @@ Exec = /usr/local/bin/omarchy-niri-extension rebuild
         changes.write(pam, content)
 
 
-def build(user, base, previous):
+def build(user, base, previous, autologin=False):
     runtime = STATE / 'runtimes' / uuid.uuid4().hex
     runtime.parent.mkdir(parents=True, exist_ok=True)
     source = runtime.with_name('.source-' + runtime.name)
@@ -302,7 +367,7 @@ def build(user, base, previous):
         source.rename(extension)
         metadata = {'user': user, 'version': json.loads((extension / 'manifest.json').read_text())['version'],
                     'base': str(base), 'built_at': time.time(), 'compatibility': report,
-                    'legacy_owner': (previous or {}).get('legacy_owner')}
+                    'legacy_owner': (previous or {}).get('legacy_owner'), 'autologin': autologin}
         atomic(extension / 'release.json', json.dumps(metadata, indent=2) + '\n', 0o644)
         return runtime
     except BaseException:
@@ -312,8 +377,9 @@ def build(user, base, previous):
         shutil.rmtree(source, ignore_errors=True)
 
 
-def activate(user, base, previous, dependencies=False):
-    runtime = build(user, base, previous)
+def activate(user, base, previous, dependencies=False, autologin=False):
+    autologin = (previous or {}).get('autologin', autologin)
+    runtime = build(user, base, previous, autologin)
     pending = STATE / 'pending'
     try:
         pending.mkdir(mode=0o700)
@@ -324,7 +390,7 @@ def activate(user, base, previous, dependencies=False):
         changes = Transaction()
         if previous is None:
             configure_user(user, runtime, changes)
-        configure_system(runtime, changes)
+        configure_system(runtime, changes, autologin)
         validate_user(user, runtime)
         switch(runtime)
     except BaseException:
@@ -340,7 +406,7 @@ def activate(user, base, previous, dependencies=False):
     print('Niri runtime ready. Log out and back in to use it. Previous runtimes are retained.')
 
 
-def install(user, base, dependencies=True):
+def install(user, base, dependencies=True, autologin=False):
     if release():
         raise ValueError('Already installed; use update.')
     if (STATE / 'ledger').exists():
@@ -348,7 +414,7 @@ def install(user, base, dependencies=True):
     account = pwd.getpwnam(user)
     if account.pw_uid == 0:
         raise ValueError('Specify your desktop account with --user.')
-    activate(user, base, None, dependencies)
+    activate(user, base, None, dependencies, autologin)
 
 
 def refresh(base):
@@ -375,6 +441,12 @@ def uninstall():
     print('Original session restored; reboot. Backups and edits: ' + str(archive))
 
 
+def session_lost():
+    """True when the installed runtime is no longer selected by /etc/omarchy.conf."""
+    conf = system('/etc/omarchy.conf')
+    return not conf.exists() or MARKER not in conf.read_text()
+
+
 def status():
     info = release()
     print(json.dumps(info, indent=2) if info else 'Niri extension is not installed.')
@@ -382,6 +454,9 @@ def status():
     if failed.exists():
         print('Omarchy upgrade needs review; previous runtime retained:\n' + failed.read_text())
         return 1
+    if info and session_lost():
+        print('The Niri session is not using the runtime: /etc/omarchy.conf was rewritten or removed.')
+        print('Fix it with: sudo omarchy-niri-extension update')
     return 0
 
 
@@ -393,6 +468,12 @@ def notify():
             'Omarchy compatibility review needed. The previous Niri runtime is retained.',
             '--exec', 'omarchy-launch-floating-terminal-with-presentation',
             shlex.quote(str(HERE / 'omarchy-niri-extension')) + ' status')
+        return
+    if installed and session_lost():
+        run('omarchy-notification-send', 'Omarchy Niri',
+            'The Niri session is not using the runtime. Click to update it',
+            '--exec', 'omarchy-launch-floating-terminal-with-presentation',
+            'sudo ' + shlex.quote(str(HERE / 'omarchy-niri-extension')) + ' update')
         return
     if installed and installed['version'] == wanted:
         return
@@ -423,6 +504,8 @@ def main():
     parser.add_argument('--user', default=os.environ.get('SUDO_USER'))
     parser.add_argument('--base', type=Path, default=BASE)
     parser.add_argument('--skip-packages', action='store_true')
+    parser.add_argument('--autologin', action='store_true',
+                        help='write the SDDM autologin selection (kept by later updates)')
     args = parser.parse_args()
     if args.action == 'status':
         return status()
@@ -434,7 +517,7 @@ def main():
         if args.action == 'install':
             if not args.user:
                 parser.error('Pass --user NAME for the desktop account.')
-            install(args.user, args.base, not args.skip_packages)
+            install(args.user, args.base, not args.skip_packages, args.autologin)
         elif args.action == 'uninstall':
             uninstall()
         else:

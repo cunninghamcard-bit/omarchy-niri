@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from contextlib import redirect_stdout
 from unittest import mock
 
 import manage
@@ -54,6 +56,17 @@ class ManagerTests(unittest.TestCase):
         (runtime / "bin/omarchy-apply-lock").write_text("#!/bin/bash\ncat <<'EOF'\nlock\nEOF\n")
         return {"base": "test"}
 
+    def sourced(self, conf, desktop=None):
+        """What a plain shell resolves OMARCHY_PATH to after sourcing the conf."""
+        environment = dict(os.environ)
+        environment.pop("XDG_CURRENT_DESKTOP", None)
+        environment.pop("XDG_SESSION_DESKTOP", None)
+        if desktop is not None:
+            environment["XDG_CURRENT_DESKTOP"] = desktop
+        result = subprocess.run(["bash", "-c", '. "$1"; printf %s "$OMARCHY_PATH"', "bash", str(conf)],
+                                capture_output=True, text=True, env=environment)
+        return result.stdout.strip()
+
     def original_files(self):
         files = {
             "etc/omarchy.conf": "old conf\n",
@@ -85,8 +98,8 @@ class ManagerTests(unittest.TestCase):
         originals = self.original_files()
         real_configure = manage.configure_system
 
-        def fail_after_writes(runtime, changes):
-            real_configure(runtime, changes)
+        def fail_after_writes(runtime, changes, autologin=False):
+            real_configure(runtime, changes, autologin)
             raise RuntimeError("configuration failed")
 
         with mock.patch.object(manage, "configure_system", side_effect=fail_after_writes):
@@ -179,12 +192,132 @@ class ManagerTests(unittest.TestCase):
         self.original_files()
         manage.install('tester', self.base, dependencies=False)
         current = (self.state / 'current').resolve()
-        config = manage.system('/etc/omarchy.conf')
-        config.write_text('intentional user edit')
+        hook = manage.system('/etc/pacman.d/hooks/95-omarchy-niri.hook')
+        hook.write_text('intentional user edit')
         with self.assertRaisesRegex(ValueError, 'Managed file was edited'):
             manage.refresh(self.base)
-        self.assertEqual(config.read_text(), 'intentional user edit')
+        self.assertEqual(hook.read_text(), 'intentional user edit')
         self.assertEqual((self.state / 'current').resolve(), current)
+        # Only a marker-less rewrite of omarchy.conf is adopted; edits inside the managed file still fail.
+        conf = manage.system('/etc/omarchy.conf')
+        conf.write_text(conf.read_text().replace('/usr/share/omarchy', '/opt/other'))
+        with self.assertRaisesRegex(ValueError, 'Managed file was edited'):
+            manage.refresh(self.base)
+        self.assertIn('/opt/other', conf.read_text())
+
+    def test_update_adopts_a_dev_link_rewritten_conf(self):
+        self.original_files()
+        manage.install('tester', self.base, dependencies=False)
+        conf = manage.system('/etc/omarchy.conf')
+        conf.write_text('export OMARCHY_PATH="/opt/omarchy"\n')  # what omarchy dev link writes
+        manage.refresh(self.base)  # must not fail with "Managed file was edited"
+        self.assertIn(manage.MARKER, conf.read_text())
+        self.assertEqual(self.sourced(conf, desktop='Hyprland'), '/opt/omarchy')
+        self.assertEqual(self.sourced(conf, desktop='niri'), os.path.realpath(self.state / 'current'))
+        # dev unlink resets the packaged default; the next update keeps that instead.
+        conf.write_text('export OMARCHY_PATH="/usr/share/omarchy"\n')
+        manage.refresh(self.base)
+        self.assertIn(manage.MARKER, conf.read_text())
+        self.assertEqual(self.sourced(conf, desktop='Hyprland'), '/usr/share/omarchy')
+
+    def test_install_conf_falls_back_to_packaged_omarchy(self):
+        manage.install('tester', self.base, dependencies=False)
+        conf = manage.system('/etc/omarchy.conf')
+        self.assertIn(manage.MARKER, conf.read_text())
+        self.assertEqual(self.sourced(conf, desktop='niri'), os.path.realpath(self.state / 'current'))
+        self.assertEqual(self.sourced(conf, desktop='Hyprland'), '/usr/share/omarchy')
+        self.assertEqual(self.sourced(conf), '/usr/share/omarchy')
+
+    def test_install_preserves_preexisting_dev_link_default(self):
+        conf = manage.system('/etc/omarchy.conf')
+        conf.parent.mkdir(parents=True, exist_ok=True)
+        conf.write_text('export OMARCHY_PATH="/opt/omarchy"\n')
+        manage.install('tester', self.base, dependencies=False)
+        self.assertIn(manage.MARKER, conf.read_text())
+        self.assertEqual(self.sourced(conf, desktop='Hyprland'), '/opt/omarchy')
+        self.assertEqual(self.sourced(conf, desktop='niri'), os.path.realpath(self.state / 'current'))
+        self.assertEqual(self.sourced(conf, desktop='GNOME'), '/opt/omarchy')
+
+    def test_unmanaged_system_files_are_never_written(self):
+        originals = self.original_files()
+        manage.install('tester', self.base, dependencies=False)
+        for relative in ('etc/sudoers.d/omarchy-dev-path', 'usr/local/share/wayland-sessions/omarchy.desktop',
+                         'etc/sddm.conf.d/90-omarchy-niri.conf'):
+            self.assertEqual(manage.system('/' + relative).read_text(), originals[relative])
+        ledger = json.loads((self.state / 'changes.json').read_text())
+        for relative in ('etc/sudoers.d/omarchy-dev-path', 'usr/local/share/wayland-sessions/omarchy.desktop',
+                         'etc/sddm.conf.d/90-omarchy-niri.conf', 'etc/pacman.d/hooks/10-omarchy-hyprland-reload-pause.hook',
+                         'etc/pacman.d/hooks/90-omarchy-hyprland-reload-resume.hook'):
+            self.assertNotIn(str(manage.system('/' + relative)), ledger)
+        self.assertIn(str(manage.system('/usr/local/share/wayland-sessions/omarchy-niri.desktop')), ledger)
+
+    def test_autologin_only_with_flag_and_kept_by_update(self):
+        manage.install('tester', self.base, dependencies=False, autologin=True)
+        sddm = manage.system('/etc/sddm.conf.d/90-omarchy-niri.conf')
+        self.assertEqual(sddm.read_text(), '[Autologin]\nSession=omarchy-niri.desktop\n')
+        self.assertTrue(json.loads((self.state / 'current/.extension/release.json').read_text())['autologin'])
+        manage.refresh(self.base)
+        self.assertEqual(sddm.read_text(), '[Autologin]\nSession=omarchy-niri.desktop\n')
+
+    def test_without_autologin_an_existing_entry_is_released(self):
+        self.original_files()
+        manage.install('tester', self.base, dependencies=False)
+        sddm = manage.system('/etc/sddm.conf.d/90-omarchy-niri.conf')
+        self.assertEqual(sddm.read_text(), 'old sddm\n')
+        manage.refresh(self.base)
+        self.assertEqual(sddm.read_text(), 'old sddm\n')
+        self.assertNotIn(str(sddm), json.loads((self.state / 'changes.json').read_text()))
+
+    def test_update_releases_files_the_03_install_still_managed(self):
+        manage.install('tester', self.base, dependencies=False)
+        changes = manage.Changes(self.state)
+        sudoers = manage.system('/etc/sudoers.d/omarchy-dev-path')
+        sudoers.parent.mkdir(parents=True, exist_ok=True)
+        changes.remember(sudoers)  # a 0.3 install had no predecessor for this file
+        sudoers.write_text('Defaults secure_path="/var/lib/omarchy-niri/current/bin:/usr/bin"\n')
+        changes.record(sudoers)
+        desktop = manage.system('/usr/local/share/wayland-sessions/omarchy.desktop')
+        desktop.parent.mkdir(parents=True, exist_ok=True)
+        desktop.write_text('old desktop\n')
+        changes.remember(desktop)  # 0.3 shadowed a pre-existing Hyprland entry
+        desktop.write_text('[Desktop Entry 0.3]\n')
+        changes.record(desktop)
+        hooks = []
+        for name in ('10-omarchy-hyprland-reload-pause.hook', '90-omarchy-hyprland-reload-resume.hook'):
+            hook = manage.system('/etc/pacman.d/hooks/' + name)
+            hook.parent.mkdir(parents=True, exist_ok=True)
+            changes.remember(hook)  # 0.3 masked the upstream hook with a symlink
+            hook.symlink_to('/dev/null')
+            changes.record(hook)
+            hooks.append(hook)
+        desktop.write_text('user edited desktop\n')  # edited after the 0.3 install
+        manage.refresh(self.base)
+        self.assertFalse(sudoers.exists())  # no predecessor: removed
+        for hook in hooks:
+            self.assertFalse(hook.exists())  # mask removed, upstream hook dir untouched
+        self.assertEqual(desktop.read_text(), 'old desktop\n')  # predecessor restored
+        preserved = [f for f in (self.state / 'preserved').rglob('*') if f.is_file()]
+        self.assertEqual([f.read_text() for f in preserved], ['user edited desktop\n'])
+        ledger = json.loads((self.state / 'changes.json').read_text())
+        for path in [sudoers, desktop, *hooks, manage.system('/etc/sddm.conf.d/90-omarchy-niri.conf')]:
+            self.assertNotIn(str(path), ledger)
+
+    def test_status_and_notify_report_when_the_conf_is_not_managed(self):
+        manage.install('tester', self.base, dependencies=False)
+        conf = manage.system('/etc/omarchy.conf')
+        conf.write_text('export OMARCHY_PATH="/opt/omarchy"\n')
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(manage.status(), 0)
+        self.assertIn('not using the runtime', out.getvalue())
+        manage.notify()
+        self.assertIn('update', manage.run.call_args[0][2])
+
+    def test_notify_is_quiet_while_the_managed_conf_matches(self):
+        manage.install('tester', self.base, dependencies=False)
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(manage.status(), 0)
+        manage.notify()  # installed version matches the manifest and the conf still has the marker
+        manage.run.assert_not_called()
 
     def test_restore_preflights_all_files_before_mutating(self):
         path = self.system / "etc/example"
