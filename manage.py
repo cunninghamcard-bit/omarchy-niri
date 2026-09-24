@@ -27,6 +27,8 @@ DEPENDENCIES = ('niri', 'xwayland-satellite', 'xdg-desktop-portal-gnome',
                 'xdg-desktop-portal-gtk', 'wf-recorder', 'gammastep', 'wl-mirror',
                 'python', 'git', 'jq', 'slurp', 'grim', 'wl-clipboard')
 MARKER = '# Managed by omarchy-niri'
+BLOCK_START = '// >>> omarchy-niri (managed; delete a line to drop that part)'
+BLOCK_END = '// <<< omarchy-niri'
 
 
 def system(path):
@@ -242,47 +244,138 @@ def as_user(user, runtime, command):
 
 
 def validate_user(user, runtime):
-    """Validate personal overrides against the candidate without changing the active include."""
-    account = pwd.getpwnam(user)
-    config = Path(account.pw_dir) / '.config/niri/config.kdl'
-    text = config.read_text().replace(str(STATE / 'current'), str(runtime))
-    # Version 0.2 used these two per-user symlinks into current.
-    for name, target in [('omarchy.kdl', 'config.kdl'), ('window-management.kdl', 'window-management.kdl')]:
-        text = text.replace('~/.config/niri/' + name, str(runtime / 'default/niri' / target))
-    fd, name = tempfile.mkstemp(prefix='.niri-validate-', suffix='.kdl', dir=config.parent)
-    try:
-        with os.fdopen(fd, 'w') as stream:
-            stream.write(text)
-        os.chown(name, account.pw_uid, account.pw_gid)
-        as_user(user, runtime, ['niri', 'validate', '--config', name])
-    finally:
-        Path(name).unlink(missing_ok=True)
+    """Validate the desktop user's Niri configuration before the runtime is published."""
+    as_user(user, runtime, ['niri', 'validate'])
 
 
-def configure_user(user, runtime, changes):
-    account = pwd.getpwnam(user)
-    home = Path(account.pw_dir)
-    directory = home / '.config/niri'
-    for path in (directory, home / '.config/omarchy'):
-        if not path.exists():
-            path.mkdir(parents=True)
-            os.chown(path, account.pw_uid, account.pw_gid)
-    config = (runtime / 'config/niri/config.kdl').read_text().replace('/var/lib/omarchy-niri/current', str(STATE / 'current'))
-    files = {directory / 'config.kdl': config}
+def block():
+    """The managed include block at the top of the user's config.kdl."""
+    lines = [BLOCK_START,
+             'include "~/.config/niri/omarchy/config.kdl"',
+             'include "~/.config/niri/omarchy/window-management.kdl"',
+             'include optional=true "~/.config/niri/omarchy-theme.kdl"',
+             'include optional=true "~/.config/niri/omarchy-outputs.kdl"',
+             'include optional=true "~/.config/niri/omarchy-input.kdl"',
+             'include optional=true "~/.config/niri/omarchy-flags.kdl"',
+             'include optional=true "~/.config/niri/outputs.kdl"',
+             'include optional=true "~/.config/niri/input.kdl"',
+             'include optional=true "~/.config/niri/bindings.kdl"',
+             BLOCK_END]
+    return '\n'.join(lines)
+
+
+def old_includes():
+    """Include lines the 0.2 symlinks and the 0.3 runtime used to manage."""
+    lines = {'include "~/.config/niri/omarchy.kdl"', 'include ~/.config/niri/omarchy.kdl',
+             'include "~/.config/niri/window-management.kdl"', 'include ~/.config/niri/window-management.kdl'}
+    for root in {str(STATE / 'current'), '/var/lib/omarchy-niri/current'}:
+        for name in ('config.kdl', 'window-management.kdl'):
+            lines.add('include "' + root + '/default/niri/' + name + '"')
+    return lines
+
+
+def migrate_config(text):
+    """Replace the old managed include lines with the block; None when the file has none."""
+    old = old_includes()
+    result, replaced = [], False
+    for line in text.splitlines(keepends=True):
+        if line.strip() in old:
+            if not replaced:
+                result.append(block() + '\n')
+                replaced = True
+        else:
+            result.append(line)
+    return ''.join(result) if replaced else None
+
+
+def sync(home):
+    """User-level step that owns every Niri config write in the home directory."""
+    if os.geteuid() == 0:
+        raise ValueError('Run sync as the desktop user; it must not create root-owned files.')
+    niri = home / '.config/niri'
+    (niri / 'omarchy').mkdir(parents=True, exist_ok=True)
+    (home / '.config/omarchy').mkdir(parents=True, exist_ok=True)
+    previous = []  # (path, content before this sync) rolled back when validation fails
+
+    def write(path, text):
+        if not (path.exists() and path.read_text() == text):
+            previous.append((path, path.read_text() if path.exists() else None))
+            atomic(path, text, 0o644)
+
     for name in ('input', 'outputs', 'bindings'):
-        path = directory / (name + '.kdl')
+        path = niri / (name + '.kdl')
         if not path.exists():
-            files[path] = '// Personal Niri overrides.\n'
+            write(path, '// Personal Niri overrides.\n')
     style = home / '.config/omarchy/niri-style.json'
     if not style.exists():
-        files[style] = (runtime / 'config/omarchy/niri-style.json').read_text()
-    for path, text in files.items():
-        changes.write(path, text)
-        os.chown(path, account.pw_uid, account.pw_gid)
-    theme = directory / 'omarchy-theme.kdl'
-    changes.remember(theme)
-    as_user(user, runtime, ['omarchy-niri', 'theme'])
-    changes.record(theme)
+        write(style, (HERE / 'overlay/config/omarchy/niri-style.json').read_text())
+    config = niri / 'config.kdl'
+    if not config.exists():
+        write(config, block() + '\n')
+    elif BLOCK_START not in config.read_text():
+        text = config.read_text()
+        backup = config.with_name('config.kdl.pre-omarchy-niri')
+        if not backup.exists():
+            shutil.copy2(config, backup)
+        # Niri includes are positional, so a prepended block keeps personal overrides in charge.
+        write(config, migrate_config(text) or block() + '\n\n' + text)
+    theme = niri / 'omarchy-theme.kdl'
+    if not theme.exists():
+        previous.append((theme, None))
+        run('omarchy-niri', 'theme', env={**os.environ, 'HOME': str(home)})
+    for source in sorted((HERE / 'niri').glob('*.kdl')):
+        write(niri / 'omarchy' / source.name, source.read_text())
+    write(niri / 'omarchy/.version', json.loads((HERE / 'manifest.json').read_text())['version'] + '\n')
+    if shutil.which('niri'):
+        result = subprocess.run(['niri', 'validate'], env={**os.environ, 'HOME': str(home)},
+                                capture_output=True, text=True)
+        if result.returncode != 0:
+            for path, text in reversed(previous):
+                if text is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    atomic(path, text, 0o644)
+            raise ValueError('Niri rejected the configuration: '
+                             + (result.stderr.strip() or result.stdout.strip()))
+
+
+def unsync(home):
+    """User-level uninstall: strip the managed block and defaults, keep every personal file."""
+    if os.geteuid() == 0:
+        raise ValueError('Run unsync as the desktop user, not root.')
+    config = home / '.config/niri/config.kdl'
+    if config.exists():
+        lines = config.read_text().splitlines(keepends=True)
+        kept, inside = [], False
+        for line in lines:
+            if line.strip() == BLOCK_START:
+                inside = True
+            elif line.strip() == BLOCK_END:
+                inside = False
+            elif not inside:
+                kept.append(line)
+        if len(kept) != len(lines):
+            atomic(config, ''.join(kept), 0o644)
+    shutil.rmtree(home / '.config/niri/omarchy', ignore_errors=True)
+
+
+def migrate_user_ledger(user):
+    """A 0.3 install recorded home files in the root ledger; hand them to the user step."""
+    account = pwd.getpwnam(user)
+    home = Path(account.pw_dir)
+    config = home / '.config/niri/config.kdl'
+    changes = Changes(STATE)
+    for key in list(changes.items):
+        if not key.startswith(str(home) + '/'):
+            continue
+        # The user's original pre-0.3 config survives as a sibling copy; nothing else moves.
+        if Path(key) == config and changes.items[key]['before'] is not None:
+            target = config.with_name('config.kdl.pre-omarchy-niri')
+            if not target.exists():
+                shutil.copy2(changes.directory / 'backups' / key.lstrip('/'), target)
+                os.chown(target, account.pw_uid, account.pw_gid)
+        del changes.items[key]
+    changes.flush()
 
 
 def sourced(conf):
@@ -365,7 +458,8 @@ def build(user, base, previous, autologin=False):
         report = prepare(base, runtime, source)
         extension = runtime / '.extension'
         source.rename(extension)
-        metadata = {'user': user, 'version': json.loads((extension / 'manifest.json').read_text())['version'],
+        manifest = json.loads((extension / 'manifest.json').read_text())
+        metadata = {'user': user, 'version': manifest['version'], 'runtimeVersion': manifest['runtimeVersion'],
                     'base': str(base), 'built_at': time.time(), 'compatibility': report,
                     'legacy_owner': (previous or {}).get('legacy_owner'), 'autologin': autologin}
         atomic(extension / 'release.json', json.dumps(metadata, indent=2) + '\n', 0o644)
@@ -388,9 +482,10 @@ def activate(user, base, previous, dependencies=False, autologin=False):
             run(str(base / 'bin/omarchy-pkg-add'), *DEPENDENCIES,
                 env={**os.environ, 'OMARCHY_PATH': str(base), 'PATH': str(base / 'bin') + ':' + os.environ['PATH']})
         changes = Transaction()
-        if previous is None:
-            configure_user(user, runtime, changes)
         configure_system(runtime, changes, autologin)
+        migrate_user_ledger(user)
+        # Every home write belongs to the unprivileged sync step, run as the desktop user.
+        as_user(user, runtime, ['python3', str(runtime / '.extension/manage.py'), 'sync'])
         validate_user(user, runtime)
         switch(runtime)
     except BaseException:
@@ -432,6 +527,7 @@ def uninstall():
     info = release()
     if not info:
         raise ValueError('Not installed.')
+    as_user(info['user'], HERE, ['python3', str(HERE / 'manage.py'), 'unsync'])
     Changes(STATE).restore()
     marker = PREFIX / '.omarchy-niri-owner'
     if info.get('legacy_owner') and marker.exists() and marker.read_text().strip() == info['legacy_owner']:
@@ -461,7 +557,8 @@ def status():
 
 
 def notify():
-    wanted = json.loads((HERE / 'manifest.json').read_text())['version']
+    # Only a runtime change needs root; the user-level sync already refreshed the Niri config.
+    wanted = json.loads((HERE / 'manifest.json').read_text())['runtimeVersion']
     installed = release()
     if (STATE / 'upgrade-failed.txt').exists():
         run('omarchy-notification-send', 'Omarchy Niri',
@@ -475,7 +572,7 @@ def notify():
             '--exec', 'omarchy-launch-floating-terminal-with-presentation',
             'sudo ' + shlex.quote(str(HERE / 'omarchy-niri-extension')) + ' update')
         return
-    if installed and installed['version'] == wanted:
+    if installed and installed.get('runtimeVersion') == wanted:
         return
     action = 'update' if installed else 'install'
     run('omarchy-notification-send', 'Omarchy Niri', 'Click to ' + action + ' the Niri session',
@@ -500,7 +597,8 @@ def writer():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['install', 'update', 'rebuild', 'refresh', 'uninstall', 'status', 'notify'])
+    parser.add_argument('action', choices=['install', 'update', 'rebuild', 'refresh', 'uninstall',
+                                           'status', 'notify', 'sync', 'unsync'])
     parser.add_argument('--user', default=os.environ.get('SUDO_USER'))
     parser.add_argument('--base', type=Path, default=BASE)
     parser.add_argument('--skip-packages', action='store_true')
@@ -511,6 +609,10 @@ def main():
         return status()
     if args.action == 'notify':
         notify(); return 0
+    if args.action == 'sync':
+        sync(Path.home()); return 0
+    if args.action == 'unsync':
+        unsync(Path.home()); return 0
     if os.geteuid() != 0:
         parser.error('Run with sudo.')
     with writer():

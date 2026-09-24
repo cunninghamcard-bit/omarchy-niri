@@ -47,14 +47,14 @@ class ManagerTests(unittest.TestCase):
 
     def prepare(self, base, runtime, source):
         """Supply the files consumed by configuration while retaining build's real transaction."""
-        for directory in ("bin", "config/niri", "config/omarchy", "default/wayland-sessions", "default/niri"):
+        for directory in ("bin", "default/wayland-sessions"):
             (runtime / directory).mkdir(parents=True, exist_ok=True)
-        (runtime / "manifest.json").write_text('{"version":"test"}\n')
-        (runtime / "config/niri/config.kdl").write_text("include \"/var/lib/omarchy-niri/current\"\n")
-        (runtime / "config/omarchy/niri-style.json").write_text("{}\n")
         (runtime / "default/wayland-sessions/omarchy-niri.desktop").write_text("[Desktop Entry]\n")
         (runtime / "bin/omarchy-apply-lock").write_text("#!/bin/bash\ncat <<'EOF'\nlock\nEOF\n")
         return {"base": "test"}
+
+    def user_commands(self, name):
+        return [call.args[2] for call in manage.as_user.call_args_list if call.args[2][-1] == name]
 
     def sourced(self, conf, desktop=None):
         """What a plain shell resolves OMARCHY_PATH to after sourcing the conf."""
@@ -316,8 +316,64 @@ class ManagerTests(unittest.TestCase):
         manage.install('tester', self.base, dependencies=False)
         with redirect_stdout(io.StringIO()):
             self.assertEqual(manage.status(), 0)
-        manage.notify()  # installed version matches the manifest and the conf still has the marker
+        manage.notify()  # installed runtime matches the manifest and the conf still has the marker
         manage.run.assert_not_called()
+
+    def test_notify_ignores_a_version_only_change(self):
+        manage.install('tester', self.base, dependencies=False)
+        metadata = json.loads((self.state / 'current/.extension/release.json').read_text())
+        metadata['version'] = '9.9.9'  # only the plugin version moved on; the runtime did not
+        (self.state / 'current/.extension/release.json').write_text(json.dumps(metadata))
+        manage.notify()
+        manage.run.assert_not_called()
+
+    def test_notify_prompts_when_the_runtime_version_changes(self):
+        manage.install('tester', self.base, dependencies=False)
+        metadata = json.loads((self.state / 'current/.extension/release.json').read_text())
+        metadata['runtimeVersion'] = '0.3.0'
+        (self.state / 'current/.extension/release.json').write_text(json.dumps(metadata))
+        manage.notify()
+        self.assertIn('update', manage.run.call_args[0][2])
+
+    def test_activate_runs_the_user_step_on_install_and_update(self):
+        manage.install('tester', self.base, dependencies=False)
+        self.assertTrue(self.user_commands('sync'))
+        manage.as_user.reset_mock()
+        manage.refresh(self.base)
+        self.assertTrue(self.user_commands('sync'))
+
+    def test_no_home_path_is_recorded_in_the_root_ledger(self):
+        manage.install('tester', self.base, dependencies=False)
+        manage.refresh(self.base)
+        ledger = json.loads((self.state / 'changes.json').read_text())
+        self.assertFalse([key for key in ledger if key.startswith(str(self.home) + '/')])
+
+    def test_uninstall_runs_the_user_level_unsync(self):
+        manage.install('tester', self.base, dependencies=False)
+        manage.uninstall()
+        self.assertTrue(self.user_commands('unsync'))
+
+    def test_update_hands_the_03_home_ledger_to_the_user_step(self):
+        manage.install('tester', self.base, dependencies=False)
+        changes = manage.Changes(self.state)
+        config = self.home / '.config/niri/config.kdl'
+        config.write_text('original user config\n')
+        changes.remember(config)  # 0.3 backed up the user's original before overwriting it
+        config.write_text('include "/var/lib/omarchy-niri/current/default/niri/config.kdl"\n')
+        changes.record(config)
+        style = self.home / '.config/omarchy/niri-style.json'
+        style.parent.mkdir(parents=True, exist_ok=True)
+        for path in (style, *[self.home / '.config/niri' / (name + '.kdl')
+                              for name in ('input', 'outputs', 'bindings', 'omarchy-theme')]):
+            changes.remember(path)  # 0.3 created these from root: no predecessor
+            path.write_text('// created by 0.3\n')
+            changes.record(path)
+        manage.refresh(self.base)
+        ledger = json.loads((self.state / 'changes.json').read_text())
+        self.assertFalse([key for key in ledger if key.startswith(str(self.home) + '/')])
+        self.assertEqual(config.read_text(), 'include "/var/lib/omarchy-niri/current/default/niri/config.kdl"\n')
+        self.assertEqual(style.read_text(), '// created by 0.3\n')
+        self.assertEqual(config.with_name('config.kdl.pre-omarchy-niri').read_text(), 'original user config\n')
 
     def test_restore_preflights_all_files_before_mutating(self):
         path = self.system / "etc/example"
@@ -401,6 +457,132 @@ class ManagerTests(unittest.TestCase):
             first.wait(timeout=5)
             first.stdout.close()
             first.stderr.close()
+
+
+class SyncTests(unittest.TestCase):
+    """The unprivileged sync/unsync step, run against a temporary home with fake tools."""
+    root = Path(__file__).resolve().parents[1]
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        base = Path(os.path.realpath(self.tmp.name))
+        self.home = base / 'home'
+        self.tools = base / 'bin'
+        self.home.mkdir()
+        self.tools.mkdir()
+        self.tool('omarchy-niri', ': > "$HOME/.config/niri/omarchy-theme.kdl"')
+        # The test host has no real niri; fakes on PATH decide whether validation passes.
+        self.environment = mock.patch.dict(os.environ,
+                                           {**os.environ, 'PATH': str(self.tools) + os.pathsep + os.environ['PATH']})
+        self.environment.start()
+
+    def tearDown(self):
+        self.environment.stop()
+        self.tmp.cleanup()
+
+    def tool(self, name, body):
+        path = self.tools / name
+        path.write_text('#!/bin/sh\n' + body + '\n')
+        path.chmod(0o755)
+        return path
+
+    def snapshots(self):
+        return {str(path.relative_to(self.home)): (path.stat().st_ino, path.stat().st_mtime_ns)
+                for path in self.home.rglob('*') if path.is_file()}
+
+    def test_sync_refuses_root(self):
+        for action in (manage.sync, manage.unsync):
+            with self.subTest(action=action.__name__):
+                with mock.patch.object(manage.os, 'geteuid', return_value=0):
+                    with self.assertRaisesRegex(ValueError, 'desktop user'):
+                        action(self.home)
+
+    def test_sync_creates_the_block_and_defaults(self):
+        self.tool('niri', 'exit 0')
+        manage.sync(self.home)
+        self.assertEqual((self.home / '.config/niri/config.kdl').read_text(), manage.block() + '\n')
+        for name in ('config.kdl', 'window-management.kdl'):
+            self.assertEqual((self.home / '.config/niri/omarchy' / name).read_text(),
+                             (self.root / 'niri' / name).read_text())
+        version = json.loads((self.root / 'manifest.json').read_text())['version']
+        self.assertEqual((self.home / '.config/niri/omarchy/.version').read_text(), version + '\n')
+        for name in ('input', 'outputs', 'bindings'):
+            self.assertEqual((self.home / ('.config/niri/' + name + '.kdl')).read_text(),
+                             '// Personal Niri overrides.\n')
+        self.assertEqual((self.home / '.config/omarchy/niri-style.json').read_text(),
+                         (self.root / 'overlay/config/omarchy/niri-style.json').read_text())
+        self.assertTrue((self.home / '.config/niri/omarchy-theme.kdl').is_file())
+
+    def test_sync_prepends_the_block_to_an_existing_config(self):
+        self.tool('niri', 'exit 0')
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text('layout { gaps 20 }\n')
+        manage.sync(self.home)
+        self.assertEqual(config.read_text(), manage.block() + '\n\nlayout { gaps 20 }\n')
+        self.assertEqual(config.with_name('config.kdl.pre-omarchy-niri').read_text(), 'layout { gaps 20 }\n')
+        before = self.snapshots()
+        manage.sync(self.home)  # a second run with unchanged sources rewrites nothing
+        self.assertEqual(self.snapshots(), before)
+
+    def test_sync_migrates_the_03_absolute_includes(self):
+        self.tool('niri', 'exit 0')
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text('// managed header\n'
+                          'include "/var/lib/omarchy-niri/current/default/niri/config.kdl"\n'
+                          'include "/var/lib/omarchy-niri/current/default/niri/window-management.kdl"\n'
+                          'include optional=true "~/.config/niri/omarchy-theme.kdl"\n'
+                          'layout { gaps 20 }\n')
+        manage.sync(self.home)
+        self.assertEqual(config.read_text(),
+                         '// managed header\n' + manage.block() + '\n'
+                         'include optional=true "~/.config/niri/omarchy-theme.kdl"\n'
+                         'layout { gaps 20 }\n')
+
+    def test_sync_migrates_the_02_symlink_includes(self):
+        self.tool('niri', 'exit 0')
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text('include ~/.config/niri/omarchy.kdl\n'
+                          'include ~/.config/niri/window-management.kdl\n'
+                          'layout { gaps 20 }\n')
+        manage.sync(self.home)
+        self.assertEqual(config.read_text(), manage.block() + '\nlayout { gaps 20 }\n')
+
+    def test_sync_rolls_back_when_niri_rejects_the_config(self):
+        self.tool('niri', 'echo "config error" >&2; exit 1')
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text('layout { gaps 20 }\n')
+        managed = self.home / '.config/niri/omarchy/config.kdl'
+        managed.parent.mkdir(parents=True)
+        managed.write_text('old defaults\n')
+        with self.assertRaisesRegex(ValueError, 'config error'):
+            manage.sync(self.home)
+        self.assertEqual(config.read_text(), 'layout { gaps 20 }\n')
+        self.assertEqual(managed.read_text(), 'old defaults\n')
+        self.assertFalse((self.home / '.config/niri/input.kdl').exists())
+        self.assertFalse((self.home / '.config/niri/omarchy/.version').exists())
+
+    def test_unsync_strips_only_the_block(self):
+        config = self.home / '.config/niri/config.kdl'
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text(manage.block() + '\nlayout { gaps 20 }\n')
+        for name in ('input', 'outputs', 'bindings'):
+            (self.home / ('.config/niri/' + name + '.kdl')).write_text('my overrides\n')
+        (self.home / '.config/niri/omarchy-theme.kdl').write_text('edited theme\n')
+        (self.home / '.config/omarchy').mkdir(parents=True)
+        (self.home / '.config/omarchy/niri-style.json').write_text('{"radius": 0}\n')
+        (self.home / '.config/niri/omarchy').mkdir()
+        (self.home / '.config/niri/omarchy/config.kdl').write_text('defaults\n')
+        manage.unsync(self.home)
+        self.assertEqual(config.read_text(), 'layout { gaps 20 }\n')
+        self.assertFalse((self.home / '.config/niri/omarchy').exists())
+        for name in ('input', 'outputs', 'bindings'):
+            self.assertEqual((self.home / ('.config/niri/' + name + '.kdl')).read_text(), 'my overrides\n')
+        self.assertEqual((self.home / '.config/niri/omarchy-theme.kdl').read_text(), 'edited theme\n')
+        self.assertEqual((self.home / '.config/omarchy/niri-style.json').read_text(), '{"radius": 0}\n')
 
 
 if __name__ == "__main__":
