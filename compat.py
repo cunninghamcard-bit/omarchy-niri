@@ -8,7 +8,9 @@ import subprocess
 from pathlib import Path
 
 _HYPR = re.compile(r"(?<![A-Za-z0-9_-])hyprctl\b|Quickshell\.Hyprland|\bHyprland\.[A-Za-z_]")
-_SETUP_ONLY = {"bin/omarchy-upgrade-to-quattro"}
+# The setup-only upgrader talks to a legacy Hyprland session outside this runtime;
+# the shim is the hyprctl executable itself and cannot be asked to avoid its own name.
+_SCAN_EXEMPT = {"bin/omarchy-upgrade-to-quattro", "bin/hyprctl"}
 
 def _hash(p: Path) -> str:
     h = hashlib.sha256()
@@ -84,7 +86,7 @@ def prepare(base: Path, destination: Path, source: Path) -> dict:
         for item in staged.rglob("*"):
             rel = item.relative_to(staged)
             if not item.is_file() or not (rel.parts[0] in ("bin", "shell")): continue
-            if rel.as_posix() in _SETUP_ONLY: continue
+            if rel.as_posix() in _SCAN_EXEMPT: continue
             text = "\n".join(line for line in item.read_text(errors="ignore").splitlines() if not line.lstrip().startswith(("#", "//")))
             if _HYPR.search(text):
                 bad.append(str(rel))

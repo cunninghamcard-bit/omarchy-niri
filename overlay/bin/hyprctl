@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# omarchy:summary=Translate hyprctl calls into Niri IPC for upstream scripts
+# omarchy:hidden=true
+
+exec python3 "$OMARCHY_PATH/default/niri/hyprctl.py" "$@"
