@@ -208,7 +208,9 @@ def main(argv):
     return run_reload(arguments)
   if command == "switchxkblayout":
     return run_switchxkblayout(arguments)
-  return run_dispatch(arguments)
+  if command == "dispatch":
+    return run_dispatch(arguments)
+  return unsupported(argv)
 
 
 if __name__ == "__main__":
