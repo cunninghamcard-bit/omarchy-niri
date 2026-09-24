@@ -19,5 +19,9 @@ try:
 except Exception as error:
     print(f"compatibility check failed: {error}", file=sys.stderr)
     raise SystemExit(1)
+for entry in report.get("drift", []):
+    accepted = ",".join(entry["accepted"]) or "none"
+    actual = entry["actual"] or "missing upstream"
+    print(f"upstream drift ({entry['kind']}) {entry['path']}: accepted {accepted}; actual {actual}")
 print(f"compatibility ok: {report['patches']} patches; runtime={destination}")
 PY

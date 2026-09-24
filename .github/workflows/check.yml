@@ -51,6 +51,9 @@ jobs:
           repository: omacom/omarchy
           path: test-artifacts/upstream
           fetch-depth: 0
+      # Drift alone must not fail this job; compat.prepare() records it and
+      # coverage.sh exits non-zero only on hard failures (rejected patch,
+      # missing replacement target, unadapted Hyprland call).
       - name: Prepare candidate against upstream main
         run: |
           set -o pipefail

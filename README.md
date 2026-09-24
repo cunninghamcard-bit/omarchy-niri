@@ -103,16 +103,19 @@ sudo. If `/etc/omarchy.conf` was rewritten by `omarchy dev link` or `dev
 unlink`, `status` and the notification say so and offer the update to fix it.
 
 `omarchy update` works as before. The package hook prepares a candidate runtime
-against the new package and switches to it only after all checks pass. If the
-upstream tree changes a replacement, rejects a patch, or exposes a new Hyprland
-call, `status` reports the reason in `upgrade-failed.txt` and the previous
-runtime stays selected. Old runtimes are kept for recovery.
+against the new package and switches to it only after all checks pass. If
+upstream rejects a patch, drops a replaced file, or exposes a new Hyprland call,
+`status` reports the reason in `upgrade-failed.txt` and the previous runtime
+stays selected. Changed replacements and binding files no longer block the
+update: the reviewed Niri version keeps running, and `status` plus a one-time
+notification list the drifted files. Old runtimes are kept for recovery.
 The update command stops migrations on a compatibility failure; after a
 successful rebuild, it runs them from the newly published runtime.
 
 The compatibility manifest is reviewed per Omarchy release. A new upstream call
-is not translated automatically: maintainers update the relevant replacement or
-patch, refresh its base hash, run the pinned and upstream CI checks, and publish
+is not translated automatically: maintainers review the drift with
+`tools/review-drift`, update the relevant replacement or patch, accept its hash
+only after reading the diff, run the pinned and upstream CI checks, and publish
 a new plugin version. Niri, Qt, and other system binaries still come from the
 host package manager; snapshots cover Omarchy scripts and shell files only.
 

@@ -33,23 +33,29 @@ def _patches(source: Path):
     return sorted((source / "patches").rglob("*.patch"))
 
 def prepare(base: Path, destination: Path, source: Path) -> dict:
-    """Materialize a checked Niri runtime; raise ValueError before publication on drift."""
+    """Materialize a checked Niri runtime; record drift instead of blocking it."""
     base, destination, source = map(lambda p: Path(p).resolve(), (base, destination, source))
     if not base.is_dir(): raise ValueError(f"missing Omarchy base: {base}")
     for top in ("bin", "shell", "default", "config"):
         if not (base / top).is_dir(): raise ValueError(f"missing Omarchy runtime tree: {top}")
     spec = json.loads((source / "compatibility.json").read_text())
     if destination.exists(): raise ValueError(f"destination already exists: {destination}")
-    failures = []
-    reviewed = {**spec.get("replacements", {}), **spec.get("bindings", {})}
+    replacements = spec.get("replacements", {})
+    bindings = spec.get("bindings", {})
+    drift = []
+    missing = [rel for rel in replacements if not (base / rel).is_file()]
+    if missing: raise ValueError("Omarchy removed reviewed files: " + ", ".join(sorted(missing)))
     actual_bindings = {p.relative_to(base).as_posix() for p in (base / "default/hypr/bindings").glob("*.lua")}
-    if actual_bindings != set(spec.get("bindings", {})):
-        raise ValueError("Window bindings changed; review required: " + ", ".join(sorted(actual_bindings ^ set(spec.get("bindings", {})))))
-    for rel, expected in reviewed.items():
+    for rel in sorted(actual_bindings ^ set(bindings)):
+        actual = _hash(base / rel) if rel in actual_bindings else None
+        drift.append({"path": rel, "kind": "bindings", "accepted": [], "actual": actual})
+    for rel, expected in sorted({**replacements, **bindings}.items()):
         p = base / rel
+        if not p.is_file(): continue  # removed binding file; recorded above
         accepted = [expected] if isinstance(expected, str) else expected
-        if not p.is_file() or _hash(p) not in accepted: failures.append(rel)
-    if failures: raise ValueError("Omarchy changed; review required: " + ", ".join(failures))
+        actual = _hash(p)
+        if actual not in accepted:
+            drift.append({"path": rel, "kind": "replacement" if rel in replacements else "bindings", "accepted": accepted, "actual": actual})
     expected_patches = set(spec["patches"])
     actual_patches = {str(p.relative_to(source / "patches"))[:-6] for p in _patches(source)}
     if actual_patches != expected_patches:
@@ -94,4 +100,4 @@ def prepare(base: Path, destination: Path, source: Path) -> dict:
     except BaseException:
         if staged.exists(): shutil.rmtree(staged)
         raise
-    return {"reviewed_base": spec["base"], "patches": len(actual_patches), "replacements": len(spec.get("replacements", {}))}
+    return {"reviewed_base": spec["base"], "patches": len(actual_patches), "replacements": len(spec.get("replacements", {})), "drift": drift}

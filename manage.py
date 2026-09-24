@@ -21,6 +21,7 @@ from compat import prepare
 HERE = Path(__file__).resolve().parent
 STATE = Path(os.environ.get('OMARCHY_NIRI_STATE', '/var/lib/omarchy-niri'))
 BASE = Path(os.environ.get('OMARCHY_NIRI_BASE', '/usr/share/omarchy'))
+DRIFT_SEEN = Path.home() / '.local/state/omarchy-niri/drift-seen'
 PREFIX = Path('/usr/local/lib/omarchy-niri')  # Only used when retiring a 0.2 installation.
 SYSTEM = Path('/')
 DEPENDENCIES = ('niri', 'xwayland-satellite', 'xdg-desktop-portal-gnome',
@@ -556,6 +557,9 @@ def session_lost():
 def status():
     info = release()
     print(json.dumps(info, indent=2) if info else 'Niri extension is not installed.')
+    drift = (info or {}).get('compatibility', {}).get('drift') or []
+    if drift:
+        print('Upstream changed; running reviewed Niri replacement for: ' + ', '.join(d['path'] for d in drift))
     failed = STATE / 'upgrade-failed.txt'
     if failed.exists():
         print('Omarchy upgrade needs review; previous runtime retained:\n' + failed.read_text())
@@ -564,6 +568,17 @@ def status():
         print('The Niri session is not using the runtime: /etc/omarchy.conf was rewritten or removed.')
         print('Fix it with: sudo omarchy-niri-extension update')
     return 0
+
+
+def drift_notice(drift):
+    """One notification per distinct drift set; quiet and fast once it has been seen."""
+    marker = hashlib.sha256(json.dumps(sorted((d['path'], d['actual']) for d in drift)).encode()).hexdigest()
+    if DRIFT_SEEN.exists() and DRIFT_SEEN.read_text().strip() == marker:
+        return
+    run('omarchy-notification-send', 'Omarchy Niri',
+        'Omarchy changed upstream; running the reviewed Niri replacement for: '
+        + ', '.join(sorted(d['path'] for d in drift)))
+    atomic(DRIFT_SEEN, marker + '\n')
 
 
 def notify():
@@ -582,8 +597,12 @@ def notify():
             '--exec', 'omarchy-launch-floating-terminal-with-presentation',
             'sudo ' + shlex.quote(str(HERE / 'omarchy-niri-extension')) + ' update')
         return
-    if installed and installed.get('runtimeVersion') == wanted:
-        return
+    if installed:
+        drift = (installed.get('compatibility') or {}).get('drift') or []
+        if drift:
+            drift_notice(drift)
+        if installed.get('runtimeVersion') == wanted:
+            return
     action = 'update' if installed else 'install'
     run('omarchy-notification-send', 'Omarchy Niri', 'Click to ' + action + ' the Niri session',
         '--exec', 'omarchy-launch-floating-terminal-with-presentation',
