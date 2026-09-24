@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Control the Niri desktop
-# omarchy:hidden=true
-
-exec omarchy-niri monitor-state "$@"
