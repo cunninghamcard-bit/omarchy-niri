@@ -70,20 +70,61 @@ class CompatTests(unittest.TestCase):
 
     def test_hypr_interface_in_new_bin_is_found(self):
         with tempfile.TemporaryDirectory() as d:
-            p=Path(d); base,source=self.fixture(p,overlay='hyprctl monitors')
+            p=Path(d); base,source=self.fixture(p,overlay='hyprctl devices -j')
             with self.assertRaisesRegex(ValueError, 'unadapted Hyprland interface'): prepare(base,p/'out',source)
 
     def test_hypr_interface_added_by_patch_is_found(self):
         with tempfile.TemporaryDirectory() as d:
-            p=Path(d); base,source=self.fixture(p, overlay='#!/bin/sh\necho niri\n', patch='--- a/bin/tool\n+++ b/bin/tool\n@@ -1 +1 @@\n-echo base\n+hyprctl monitors\n')
+            p=Path(d); base,source=self.fixture(p, overlay='#!/bin/sh\necho niri\n', patch='--- a/bin/tool\n+++ b/bin/tool\n@@ -1 +1 @@\n-echo base\n+hyprctl eval "hl.config()"\n')
             with self.assertRaisesRegex(ValueError, 'unadapted Hyprland interface'): prepare(base,p/'out',source)
 
     def test_hyprland_named_command_is_still_scanned(self):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d); base,source=self.fixture(p)
-            (source/'overlay/bin/omarchy-hyprland-new').write_text('hyprctl monitors')
+            (source/'overlay/bin/omarchy-hyprland-new').write_text('hyprctl binds')
             # The compatibility name is retained for callers, but its implementation is audited.
             with self.assertRaisesRegex(ValueError, 'unadapted Hyprland interface'): prepare(base,p/'out',source)
+
+    def test_shim_supported_hyprctl_call_in_bin_is_allowed(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d)
+            for script in ['hyprctl monitors -j | jq .', 'hyprctl reload', 'hyprctl -j monitors >/dev/null', 'hyprctl switchxkblayout all 0']:
+                with self.subTest(script=script):
+                    base,source=self.fixture(p/script.replace('/','_'),overlay=script)
+                    prepare(base,p/script.replace('/','_')/'out',source)
+
+    def test_shim_serves_upstream_dispatch_pattern(self):
+        # Upstream tries the Lua dispatcher and falls back to the classic name; both are covered.
+        line = r'hyprctl dispatch "hl.dsp.focus({ window = \"address:$WINDOW_ADDRESS\" })" >/dev/null 2>&1 || hyprctl dispatch focuswindow "address:$WINDOW_ADDRESS"'
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p,overlay=line)
+            prepare(base,p/'out',source)
+
+    def test_unsupported_dispatch_fails_the_scan(self):
+        for line in ['hyprctl dispatch exec bash -lc true', 'hyprctl dispatch togglefloating "address:0x1"',
+                     'hyprctl dispatch "$lua"', 'hyprctl dispatch "hl.dsp.dpms({ action = \\"disable\\" })"', 'hyprctl dispatch']:
+            with self.subTest(line=line), tempfile.TemporaryDirectory() as d:
+                p=Path(d); base,source=self.fixture(p,overlay=line)
+                with self.assertRaisesRegex(ValueError, 'unadapted Hyprland interface'): prepare(base,p/'out',source)
+
+    def test_shell_files_keep_the_strict_hyprland_scan(self):
+        for content in ['hyprctl monitors', 'Quickshell.Hyprland', 'Hyprland.dispatch()']:
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as d:
+                p=Path(d); base,source=self.fixture(p)
+                (base/'shell/Widget.qml').write_text(content)
+                with self.assertRaisesRegex(ValueError, 'unadapted Hyprland interface'): prepare(base,p/'out',source)
+
+    def test_qml_hyprland_in_bin_is_not_covered_by_the_shim(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p,overlay='Quickshell.Hyprland')
+            with self.assertRaisesRegex(ValueError, 'unadapted Hyprland interface'): prepare(base,p/'out',source)
+
+    def test_the_shim_itself_is_exempt_from_the_scan(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=Path(d); base,source=self.fixture(p)
+            (source/'overlay/bin/hyprctl').write_text('hyprctl devices -j\n')  # the shim may name its own command
+            prepare(base,p/'out',source)
+
 
     def test_removed_patch_target_rejects(self):
         with tempfile.TemporaryDirectory() as d:
