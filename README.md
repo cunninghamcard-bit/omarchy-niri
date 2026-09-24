@@ -32,7 +32,7 @@ session resolves the private runtime. Hyprland stays installed and selectable.
 ## Install
 
 The reviewed compatibility target is **Omarchy 4.0.2** (commit
-`346e69e1cec6c4e8924531874af6ba010a1bc99e`) and **Niri 26.04+**. This is an
+`346e69e1cec6c4e8924531874af6ba010a1bc99e`), **Niri 26.04+** and **Python 3.11+**. This is an
 Omarchy plugin:
 
 ```sh
@@ -46,7 +46,8 @@ terminal (it asks for your sudo password), then log out and select
 Without the plugin route, clone the repository and run
 `sudo ./omarchy-niri-extension install` from your desktop account. Add
 `--autologin` to have SDDM log straight into the Niri session; the choice is
-kept by later updates.
+kept by later updates, and `update --autologin` / `update --no-autologin`
+changes it. A 0.3 installation always used autologin and keeps it.
 
 For an existing 0.1/0.2 installation, run `sudo ./omarchy-niri-extension update`
 from the updated checkout. It retains the original uninstall backups. The

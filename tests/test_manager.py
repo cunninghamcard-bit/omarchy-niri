@@ -259,6 +259,27 @@ class ManagerTests(unittest.TestCase):
         manage.refresh(self.base)
         self.assertEqual(sddm.read_text(), '[Autologin]\nSession=omarchy-niri.desktop\n')
 
+    def test_update_keeps_the_autologin_a_03_install_wrote(self):
+        manage.install('tester', self.base, dependencies=False, autologin=True)
+        release = self.state / 'current/.extension/release.json'
+        metadata = json.loads(release.read_text())
+        del metadata['autologin']  # 0.3 wrote the file unconditionally and recorded no choice
+        release.write_text(json.dumps(metadata))
+        manage.refresh(self.base)
+        sddm = manage.system('/etc/sddm.conf.d/90-omarchy-niri.conf')
+        self.assertEqual(sddm.read_text(), '[Autologin]\nSession=omarchy-niri.desktop\n')
+
+    def test_update_flag_turns_autologin_on_and_off(self):
+        manage.install('tester', self.base, dependencies=False)
+        sddm = manage.system('/etc/sddm.conf.d/90-omarchy-niri.conf')
+        self.assertFalse(sddm.exists())
+        manage.refresh(self.base, autologin=True)
+        self.assertEqual(sddm.read_text(), '[Autologin]\nSession=omarchy-niri.desktop\n')
+        manage.refresh(self.base)
+        self.assertTrue(sddm.exists())
+        manage.refresh(self.base, autologin=False)
+        self.assertFalse(sddm.exists())
+
     def test_without_autologin_an_existing_entry_is_released(self):
         self.original_files()
         manage.install('tester', self.base, dependencies=False)
@@ -352,6 +373,18 @@ class ManagerTests(unittest.TestCase):
         manage.install('tester', self.base, dependencies=False)
         manage.uninstall()
         self.assertTrue(self.user_commands('unsync'))
+
+    def test_uninstall_leaves_home_files_a_03_ledger_still_lists(self):
+        manage.install('tester', self.base, dependencies=False)
+        changes = manage.Changes(self.state)
+        bindings = self.home / '.config/niri/bindings.kdl'
+        bindings.parent.mkdir(parents=True, exist_ok=True)
+        changes.remember(bindings)  # 0.3 created it from root: no predecessor
+        bindings.write_text('// created by 0.3\n')
+        changes.record(bindings)
+        bindings.write_text('Mod+T { spawn "foot"; }\n')  # the user's own binding
+        manage.uninstall()
+        self.assertEqual(bindings.read_text(), 'Mod+T { spawn "foot"; }\n')
 
     def test_update_hands_the_03_home_ledger_to_the_user_step(self):
         manage.install('tester', self.base, dependencies=False)

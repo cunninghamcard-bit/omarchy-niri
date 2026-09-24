@@ -482,8 +482,20 @@ def build(user, base, previous, autologin=False):
         shutil.rmtree(source, ignore_errors=True)
 
 
-def activate(user, base, previous, dependencies=False, autologin=False):
-    autologin = (previous or {}).get('autologin', autologin)
+def keep_autologin(previous, requested):
+    """An explicit --autologin/--no-autologin wins; otherwise keep what the install chose."""
+    if requested is not None:
+        return requested
+    if previous is None:
+        return False
+    if 'autologin' in previous:
+        return previous['autologin']
+    # 0.3 wrote the SDDM autologin file unconditionally; keep that session after updating.
+    return str(system('/etc/sddm.conf.d/90-omarchy-niri.conf')) in Changes(STATE).items
+
+
+def activate(user, base, previous, dependencies=False, autologin=None):
+    autologin = keep_autologin(previous, autologin)
     runtime = build(user, base, previous, autologin)
     pending = STATE / 'pending'
     try:
@@ -523,12 +535,12 @@ def install(user, base, dependencies=True, autologin=False):
     activate(user, base, None, dependencies, autologin)
 
 
-def refresh(base):
+def refresh(base, autologin=None):
     previous = release()
     if not previous:
         raise ValueError('Not installed; use install.')
     try:
-        activate(previous['user'], base, previous)
+        activate(previous['user'], base, previous, autologin=autologin)
     except Exception as error:
         atomic(STATE / 'upgrade-failed.txt', str(error) + '\n', 0o644)
         raise
@@ -539,6 +551,8 @@ def uninstall():
     if not info:
         raise ValueError('Not installed.')
     as_user(info['user'], HERE, ['python3', str(HERE / 'manage.py'), 'unsync'])
+    if info.get('user'):
+        migrate_user_ledger(info['user'])  # a 0.3 ledger still lists home files; never restore those
     Changes(STATE).restore()
     marker = PREFIX / '.omarchy-niri-owner'
     if info.get('legacy_owner') and marker.exists() and marker.read_text().strip() == info['legacy_owner']:
@@ -633,8 +647,8 @@ def main():
     parser.add_argument('--skip-packages', action='store_true')
     parser.add_argument('--force', action='store_true',
                         help='sync before the runtime is published (used by install and update)')
-    parser.add_argument('--autologin', action='store_true',
-                        help='write the SDDM autologin selection (kept by later updates)')
+    parser.add_argument('--autologin', action=argparse.BooleanOptionalAction, default=None,
+                        help='write (or with --no-autologin remove) the SDDM autologin selection; kept by later updates')
     args = parser.parse_args()
     if args.action == 'status':
         return status()
@@ -654,7 +668,7 @@ def main():
         elif args.action == 'uninstall':
             uninstall()
         else:
-            refresh(args.base)
+            refresh(args.base, args.autologin)
     return 0
 
 
