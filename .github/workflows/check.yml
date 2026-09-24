@@ -3,7 +3,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: '17 6 * * 1'   # weekly look at upstream main
+    - cron: '17 6 * * *'   # daily: Omarchy releases roughly weekly
   workflow_dispatch:
 permissions:
   contents: read
@@ -41,9 +41,15 @@ jobs:
           name: pinned-compatibility
           path: /tmp/pinned-compatibility.log
 
-  upstream-main:
+  upstream:
+    # What users will receive: the newest release tag, and the default branch
+    # (quattro) that the next release is cut from.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [latest-release, default-branch]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -51,10 +57,17 @@ jobs:
           repository: omacom/omarchy
           path: test-artifacts/upstream
           fetch-depth: 0
-      # Drift alone must not fail this job; compat.prepare() records it and
+      - name: Select upstream ${{ matrix.target }}
+        run: |
+          if [[ ${{ matrix.target }} == latest-release ]]; then
+            ref=$(git -C test-artifacts/upstream tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+            git -C test-artifacts/upstream checkout -q "$ref"
+          fi
+          git -C test-artifacts/upstream log -1 --format='Upstream %h %d %ci' | tee /tmp/upstream-ref.txt
+      # Drift alone does not fail this job; compat.prepare() records it and
       # coverage.sh exits non-zero only on hard failures (rejected patch,
       # missing replacement target, unadapted Hyprland call).
-      - name: Prepare candidate against upstream main
+      - name: Prepare candidate against upstream ${{ matrix.target }}
         run: |
           set -o pipefail
           bash tests/coverage.sh test-artifacts/upstream 2>&1 | tee /tmp/upstream-compatibility.log
@@ -62,13 +75,36 @@ jobs:
         if: always()
         run: |
           reviewed_ref=$(python3 -c 'import json; print(json.load(open("compatibility.json"))["base"])')
-          git -C test-artifacts/upstream diff --no-ext-diff "$reviewed_ref" HEAD > /tmp/upstream-diff.patch
           mkdir -p /tmp/omarchy-niri-upstream-report
-          cp /tmp/upstream-compatibility.log /tmp/omarchy-niri-upstream-report/compatibility.log 2>/dev/null || true
-          cp /tmp/upstream-diff.patch /tmp/omarchy-niri-upstream-report/upstream-diff.patch
+          git -C test-artifacts/upstream diff --no-ext-diff "$reviewed_ref" HEAD > /tmp/omarchy-niri-upstream-report/upstream-diff.patch
+          cp /tmp/upstream-ref.txt /tmp/upstream-compatibility.log /tmp/omarchy-niri-upstream-report/ 2>/dev/null || true
       - name: Upload upstream compatibility report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: upstream-compatibility
+          name: upstream-compatibility-${{ matrix.target }}
           path: /tmp/omarchy-niri-upstream-report
+
+  report:
+    # A scheduled failure opens (or comments on) one tracking issue, so a
+    # breaking Omarchy release is noticed before users run omarchy update.
+    needs: upstream
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Upstream Omarchy compatibility check failing"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number')
+          body="The scheduled upstream check failed: $RUN_URL
+          Download the upstream-compatibility artifacts for the log and the upstream diff."
+          if [[ -n $number ]]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
