@@ -2,11 +2,10 @@
 
 ## One switch, one runtime
 
-Omarchy already has the switch: `/etc/omarchy.conf` sets `OMARCHY_PATH`,
-`default/bash/env-bootstrap` puts `$OMARCHY_PATH/bin` first on `PATH`, and
-`/etc/sudoers.d/omarchy-dev-path` does the same for sudo. `omarchy dev link`
-writes those two files for a source checkout; this extension writes the same
-two files for a private runtime instead:
+Omarchy already has the switch: `/etc/omarchy.conf` sets `OMARCHY_PATH` and
+`default/bash/env-bootstrap` puts `$OMARCHY_PATH/bin` first on `PATH`. This
+extension writes a session-aware version of that file; `omarchy dev link` still
+works for a source checkout, and its value survives as the non-Niri default:
 
 ```
 /var/lib/omarchy-niri/current -> /var/lib/omarchy-niri/runtimes/<release-id>
@@ -16,7 +15,44 @@ two files for a private runtime instead:
 package symlinks, applies every patch, installs Niri replacements, and scans the
 final tree for uncovered compositor calls. The staging directory is renamed
 into `runtimes/` only after all checks pass. One atomic replacement of `current`
-publishes the runtime used by new sessions.
+publishes the runtime used by new Niri sessions.
+
+## Session scope
+
+`/etc/omarchy.conf` carries a `# Managed by omarchy-niri` marker and selects
+the runtime only when `XDG_CURRENT_DESKTOP` or `XDG_SESSION_DESKTOP` is `niri`
+(uwsm exports the desktop name before sourcing the env files, so the second
+pass resolves the runtime and prepends `runtime/bin` to `PATH`). Every other
+session — Hyprland above all — keeps the packaged default or the checkout a
+dev link selected, so installing must not break the existing setup. The same
+marker lets `status` and `notify` report a conf that `omarchy dev link` or
+`dev unlink` rewrote or removed, and offer `update` to fix it; `update` adopts
+the rewritten value as the new non-Niri default instead of failing, because the
+file is machine-generated. No sudoers file is written: sudo cannot know the
+session, and nothing in the overlay needs the Niri script versions under sudo.
+Only `omarchy-niri.desktop` is registered as a session entry, SDDM autologin is
+written only for `install --autologin` (recorded in `release.json`), and the
+upstream Hyprland reload hooks stay unmasked — their guard script is a no-op
+without a running Hyprland instance.
+
+## User-owned Niri config
+
+Root never writes into or ledgers a home directory; the unprivileged
+`omarchy-niri-extension sync` owns every home write and refuses to run as root.
+`~/.config/niri/config.kdl` belongs to the user and carries one marker-delimited
+include block; sync creates it with just the block, prepends the block to an
+existing file (backed up once as `config.kdl.pre-omarchy-niri`), migrates the
+0.3 absolute includes and the 0.2 symlink includes in place, or leaves a file
+that already has the block alone. The defaults the block includes live in
+`~/.config/niri/omarchy/` (copied from `niri/` in the checkout, rewritten only
+when the content changed, stamped with `.version`) so Niri live-reloads a
+plugin update without root; the plugin service runs sync before `notify`.
+`niri validate` gates every sync, and a rejection restores the previous files.
+`update` drops 0.3 home entries from the root ledger without touching the
+files, and `uninstall` runs the user-level `unsync`, which strips only the
+block and removes `~/.config/niri/omarchy/` while every personal file stays.
+`manifest.json` splits `version` from `runtimeVersion`: `notify` prompts for
+root only when something that goes into the runtime changed.
 
 ## What this removes
 
@@ -51,9 +87,12 @@ System files written outside the runtime go through a ledger: the pre-existing
 file is backed up once, and the digest of what was written is recorded.
 Uninstall restores the backups, deletes what had no predecessor, and copies
 any file changed since we wrote it to `preserved/` rather than discarding it.
-Installation replaces the Niri entry config after backing it up; existing personal
-input, output and binding overrides are left untouched. Files created by installation
-are removed on uninstall; subsequent edits are preserved in the uninstall archive.
+Only the Niri session entry, the wrapper, the compatibility hook, the conf and
+(optionally, per the stored choice) the SDDM autologin are managed; an update
+releases anything a 0.3 install still managed with the same ledger logic, so
+`omarchy.desktop`, the sudoers file and the masked Hyprland hooks return to
+their predecessors. Files created by installation are removed on uninstall;
+subsequent edits are preserved in the uninstall archive.
 
 ## Updates and compatibility
 
@@ -74,13 +113,17 @@ to the compositor: `hyprctl` callers in `bin/`, `Quickshell.Hyprland` users in
 | Change upstream | Mechanical effect | Where it shows |
 | --- | --- | --- |
 | Edits a file we patch | The patch must still apply, and the final file is scanned for remaining compositor calls | prepare output, `status`, CI compatibility check |
-| Edits a file we replace | An unreviewed source hash rejects the candidate | Manual review of the upstream diff, then update the accepted hashes |
+| Edits a file we replace | The candidate still builds with the reviewed replacement; the drift is recorded in the release report | `status`, one desktop notification, `tools/review-drift` |
 | Adds a compositor call in a file we do not cover | Candidate preparation fails before publication | `compat.prepare`, run on the pinned base and weekly upstream main |
 
-Keybindings, menu entries and the Niri config are ported by hand. Changes or
-additions in `default/hypr/bindings/*.lua` also stop candidate publication, so
-new Omarchy shortcuts cannot silently diverge from the Niri defaults. Review
-that diff and preserve the eight user-selected directional bindings.
+A replacement whose upstream file disappeared still fails preparation: the
+interface it adapts has changed shape, which needs a port, not a warning.
+
+Keybindings, menu entries and the Niri config are ported by hand. Hash changes
+and added or removed files in `default/hypr/bindings/*.lua` are recorded as
+drift in the same report, so new Omarchy shortcuts cannot silently diverge from
+the Niri defaults. Review that diff and preserve the eight user-selected
+directional bindings.
 
 ## Distributed as an Omarchy plugin
 
@@ -89,11 +132,14 @@ Omarchy's plugin system installs a git repository into
 `omarchy-shell`. It cannot install packages, write `/etc`, register a session or
 replace `bin/` scripts — everything the compositor swap consists of. So the
 plugin is the delivery channel and the prompt, not the mechanism: its one
-`service` entry point runs `omarchy-niri-extension notify`, which raises a
-notification when the system layer is missing or older than the checkout. The
-click opens a terminal running the installer with sudo, exactly what a user
-would type by hand. `omarchy plugin update` pulls the repository and the shell
-reloads the service, so the update prompt follows automatically.
+`service` entry point runs the unprivileged `omarchy-niri-extension sync` and
+then `notify`, which refreshes the user-owned Niri defaults (Niri watches
+included files and live-reloads) and raises a notification when the system
+layer is missing or older than the checkout. The click opens a terminal
+running the installer with sudo, exactly what a user would type by hand.
+`omarchy plugin update` pulls the repository and the shell reloads the
+service, so both the config refresh and the update prompt follow
+automatically.
 
 The bar widgets stay in the runtime rather than becoming plugin widgets: as
 `omarchy.workspaces` they need no per-user `shell.json` change, and the first-
@@ -103,11 +149,15 @@ party files that need a Niri singleton (Bar.qml, idle) can only reach it through
 ## Following upstream
 
 Every push checks the reviewed base. A weekly job also prepares against Omarchy
-main and fails visibly on drift; its artifact contains the check output and the
-full diff from the reviewed commit. Maintainers review the changed source, update
-the affected adapter or patch, and accept replacement hashes only after that
-review. Run the portable checks plus an Omarchy VM session before releasing a
-new plugin version. Merely updating the hash is not an adaptation.
+main; drift alone passes that job, while its artifact still records the drift
+list and the full diff from the reviewed commit. Hard failures — a rejected
+patch, a disappeared replacement, a new compositor call — keep it red.
+Maintainers review the changed source with `tools/review-drift <checkout>`,
+which prints the upstream diff and the accepted hashes, and accept a hash only
+after that review with `tools/review-drift --accept`. Update the affected
+adapter or patch when the change is more than cosmetic; accepting a hash is not
+an adaptation. Run the portable checks plus an Omarchy VM session before
+releasing a new plugin version.
 
 These checks detect known source interfaces; they are not proof of arbitrary
 future behavioral compatibility. Niri and Quickshell/Qt binaries are still

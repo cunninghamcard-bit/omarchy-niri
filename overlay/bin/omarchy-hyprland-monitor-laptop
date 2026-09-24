@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# omarchy:summary=Print the internal display name
-# omarchy:hidden=true
-
-niri msg --json outputs | jq -r '.[] | select(.name | test("^(eDP|LVDS|DSI)-")) | .name' | head -n1
