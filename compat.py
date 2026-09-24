@@ -1,14 +1,58 @@
 """Build and validate a private Omarchy runtime without touching the package tree."""
 from __future__ import annotations
 import hashlib
+import importlib.util
 import json
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-_HYPR = re.compile(r"(?<![A-Za-z0-9_-])hyprctl\b|Quickshell\.Hyprland|\bHyprland\.[A-Za-z_]")
-_SETUP_ONLY = {"bin/omarchy-upgrade-to-quattro"}
+_HYPRCTL = re.compile(r"(?<![A-Za-z0-9_-])hyprctl\b")
+_QML_HYPR = re.compile(r"Quickshell\.Hyprland|\bHyprland\.[A-Za-z_]")
+# The setup-only upgrader talks to a legacy Hyprland session outside this runtime;
+# the shim is the hyprctl executable itself and cannot be asked to avoid its own name.
+_SCAN_EXEMPT = {"bin/omarchy-upgrade-to-quattro", "bin/hyprctl"}
+
+def _shim_supported():
+    """The hyprctl surface the shim translates; kept in overlay/default/niri/hyprctl.py."""
+    path = Path(__file__).resolve().parent / "overlay/default/niri/hyprctl.py"
+    sys.path.insert(0, str(path.parent))
+    try:
+        spec = importlib.util.spec_from_file_location("hyprctl_shim", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.SUPPORTED
+    finally:
+        sys.path.remove(str(path.parent))
+
+def _hyprctl_positionals(rest):
+    """Positional tokens of one invocation: flags go, and -- ends option parsing."""
+    positionals, terminated = [], False
+    for token in rest.split():
+        if terminated:
+            positionals.append(token)
+        elif token == "--":
+            terminated = True
+        elif not token.startswith("-"):
+            positionals.append(token)
+    return positionals
+
+def _unadapted_hyprctl(text, supported):
+    """A bin/ hyprctl call fails only when the shim cannot serve its subcommand or dispatcher."""
+    for line in text.splitlines():
+        matches = list(_HYPRCTL.finditer(line))
+        for index, match in enumerate(matches):
+            rest = line[match.end():matches[index + 1].start() if index + 1 < len(matches) else None]
+            positionals = _hyprctl_positionals(rest)
+            if not positionals: return True
+            if positionals[0] == "dispatch":
+                dispatcher = (positionals[1:2] or [""])[0].strip("\"'")
+                lua = re.match(r"^(hl\.[a-z_.]+?)\s*\(", dispatcher)
+                if (lua.group(1) if lua else dispatcher) not in supported["dispatch"]: return True
+            elif positionals[0] not in supported: return True
+    return False
 
 def _hash(p: Path) -> str:
     h = hashlib.sha256()
@@ -87,12 +131,15 @@ def prepare(base: Path, destination: Path, source: Path) -> dict:
                 raise ValueError(f"unreviewed overlay replacement: {rel}")
             _copy_materialized(item, out, set())
         bad = []
+        shim = _shim_supported()
         for item in staged.rglob("*"):
             rel = item.relative_to(staged)
             if not item.is_file() or not (rel.parts[0] in ("bin", "shell")): continue
-            if rel.as_posix() in _SETUP_ONLY: continue
+            if rel.as_posix() in _SCAN_EXEMPT: continue
             text = "\n".join(line for line in item.read_text(errors="ignore").splitlines() if not line.lstrip().startswith(("#", "//")))
-            if _HYPR.search(text):
+            # shell/ never calls the compositor CLI; in bin/ the shim covers its reviewed surface.
+            if _QML_HYPR.search(text) or (rel.parts[0] == "shell" and _HYPRCTL.search(text)) \
+               or (rel.parts[0] == "bin" and _unadapted_hyprctl(text, shim)):
                 bad.append(str(rel))
         if bad: raise ValueError("unadapted Hyprland interface: " + ", ".join(sorted(bad)))
         if destination.exists(): raise ValueError(f"destination already exists: {destination}")
